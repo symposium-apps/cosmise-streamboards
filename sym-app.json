@@ -33,6 +33,7 @@
   "marketplace": {
     "subtitle": "Agent-built reports, visible as they happen",
     "category": "analytics",
+    "icon": "assets/icon.svg",
     "accent_color": "#175D4C"
   },
   "handle": {

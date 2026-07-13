@@ -3,6 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "description": "Agent-facing Streamboards workspace for Symposium.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/symposium-apps/cosmise-streamboards.git"
+  },
+  "homepage": "https://github.com/symposium-apps/cosmise-streamboards#readme",
   "main": "server.js",
   "scripts": {
     "css": "tailwindcss -i ./src/input.css -o ./public/styles.css --minify",
