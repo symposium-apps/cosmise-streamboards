@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  body { @apply bg-paper text-ink antialiased; }
+}
+
+@layer components {
+  .panel { @apply rounded-2xl border border-line bg-white shadow-soft; }
+  .nav-button { @apply rounded-xl px-3 py-2 text-sm font-medium text-neutral-500 transition hover:bg-neutral-100 hover:text-ink; }
+  .nav-button.active { @apply bg-ink text-white; }
+  .pill { @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold; }
+  .dot { @apply h-2 w-2 rounded-full; }
+  .btn { @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-primary { @apply btn bg-ink text-white hover:bg-neutral-700; }
+  .btn-secondary { @apply btn border border-line bg-white hover:bg-neutral-50; }
+  .code { @apply rounded-lg bg-neutral-950 px-2 py-1 font-mono text-xs text-neutral-100; }
+  .task-progress { appearance: none; overflow: hidden; border: 0; border-radius: 9999px; background: #f5f5f5; }
+  .task-progress::-webkit-progress-bar { background: #f5f5f5; }
+  .task-progress::-webkit-progress-value { border-radius: 9999px; background: #175d4c; }
+  .task-progress::-moz-progress-bar { border-radius: 9999px; background: #175d4c; }
+}

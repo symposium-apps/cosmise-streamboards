@@ -1,0 +1,41 @@
+{
+  "$schema": "https://sympo.si/schemas/sym-app-v1.json",
+  "schema_version": 1,
+  "id": "cosmise-streamboards",
+  "name": "Cosmise Streamboards",
+  "description": "Watch an agent build, verify, and present organisation-scoped Streamboards reports.",
+  "runtime": {
+    "type": "node",
+    "health_path": "/_sym/health",
+    "startup_timeout_seconds": 30,
+    "shutdown_timeout_seconds": 10
+  },
+  "configuration": {
+    "environment": [],
+    "secrets": []
+  },
+  "integrations": [
+    {
+      "id": "cosmise-streamboards",
+      "required": false,
+      "reason": "Manage Streamboards for the organisation assigned to this profile."
+    }
+  ],
+  "permissions": [
+    {
+      "id": "network.external",
+      "reason": "Render approved Cosmise Streamboard URLs supplied by the agent."
+    }
+  ],
+  "data": {
+    "persistent_paths": [".sym-data"]
+  },
+  "marketplace": {
+    "subtitle": "Agent-built reports, visible as they happen",
+    "category": "analytics",
+    "accent_color": "#175D4C"
+  },
+  "handle": {
+    "suggested": "cosmise-streamboards"
+  }
+}

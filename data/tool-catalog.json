@@ -1,0 +1,1254 @@
+{
+  "schema_version": 1,
+  "generated_from": "Cosmise Streamboards MCP canonical source",
+  "tool_count": 78,
+  "tools": [
+    {
+      "name": "streamboards_get_org_context",
+      "description": "Get the MCP key's organisation context for Streamboards: org, endpoint, feature flags, branding, connected platforms, available templates, and board summary. Org-scoped only.",
+      "category": "Discovery & verification",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_list_connections",
+      "description": "List Streamboards-relevant endpoint connections/platforms for the MCP key's organisation endpoint.",
+      "category": "Discovery & verification",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_list_query_catalog",
+      "description": "List agent-safe static widget types, dynamic query keys, and master custom metric options that can be used to create widgets.",
+      "category": "Discovery & verification",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_get_org_branding",
+      "description": "Get organisation and agency style-guide branding used by cover page widgets.",
+      "category": "Branding",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_branding"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_update_org_branding",
+      "description": "WRITE: Update the MCP key organisation style guide used by Streamboard cover pages. Supports dry_run.",
+      "category": "Branding",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": true,
+      "verify_with": [
+        "streamboards_get_branding"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_list",
+      "description": "List Streamboards owned by the MCP key's organisation. Org ownership is enforced server-side.",
+      "category": "Boards",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_get",
+      "description": "Get safe metadata for one org-owned Streamboard.",
+      "category": "Boards",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_get_urls",
+      "description": "Get canonical public/shareable and editable dashboard URLs for one org-owned Streamboard. Uses the organisation pretty_id and Streamboard slug/id; never guesses URL parts.",
+      "category": "Boards",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_list_datastreams",
+      "description": "List datastreams/widgets for one org-owned Streamboard with cache metadata.",
+      "category": "Boards",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_get_cache_status",
+      "description": "Get cache health rollup for one org-owned Streamboard.",
+      "category": "Cache & data",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_cache_status",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_validate",
+      "description": "Validate Streamboard structure: org ownership, endpoint, layout/datastream joins, widget metadata, cache health, and template scope.",
+      "category": "Discovery & verification",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_explain_widget",
+      "description": "Explain a Streamboard widget/datastream: display config, data source, effective query config, cache state, and likely issues.",
+      "category": "Widgets & layout",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_list_templates",
+      "description": "List templates available to the MCP key's organisation. Agency templates are agency-gated by the org agency_id.",
+      "category": "Templates",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_create_from_template",
+      "description": "WRITE: Create a new org-owned Streamboard from a global or org-agency template. Server infers org_id and endpoint_id from the MCP key. Supports dry_run.",
+      "category": "Templates",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": true,
+      "verify_with": [
+        "streamboards_get",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_create_blank",
+      "description": "WRITE: Create an empty org-owned Streamboard for the MCP key endpoint. Supports dry_run.",
+      "category": "Boards",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": true,
+      "verify_with": [
+        "streamboards_get",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_update_metadata",
+      "description": "WRITE: Update safe Streamboard metadata (name, description, slug, tags, allowed_roles, is_public). Does not change org/endpoint/template/user. Supports dry_run.",
+      "category": "Boards",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": true,
+      "verify_with": [
+        "streamboards_get",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_archive",
+      "description": "WRITE: Archive an org-owned Streamboard by setting archived/status fields. Supports dry_run.",
+      "category": "Boards",
+      "mode": "write",
+      "destructive": true,
+      "supports_dry_run": true,
+      "verify_with": [
+        "streamboards_get",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_delete",
+      "description": "WRITE: Hard delete an org-owned Streamboard and its datastream/password docs. Requires confirm=true and supports dry_run.",
+      "category": "Boards",
+      "mode": "write",
+      "destructive": true,
+      "supports_dry_run": true,
+      "verify_with": [
+        "streamboards_get",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_get_layout",
+      "description": "Get React Grid Layout items plus joined widget metadata/datastream summaries for one org-owned Streamboard.",
+      "category": "Widgets & layout",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_preview_layout_update",
+      "description": "Validate a proposed React Grid Layout update without writing. Enforces 48-column bounds and widget/datastream ID integrity.",
+      "category": "Widgets & layout",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": true,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_update_layout",
+      "description": "WRITE: Update React Grid Layout for an org-owned Streamboard after validation. Does not delete datastreams.",
+      "category": "Widgets & layout",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_auto_layout",
+      "description": "Preview or write a simple compact grid layout for current widgets. Supports dry_run.",
+      "category": "Widgets & layout",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": true,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_create_static_widget",
+      "description": "WRITE: Create a static widget/datastream and append layout + metadata. Supports cover_page, nav_header, markdown, header, image, etc. Supports dry_run.",
+      "category": "Widgets & layout",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": true,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_create_dynamic_widget",
+      "description": "WRITE: Create a dynamic DB widget/datastream and append layout + metadata. Use streamboards_list_query_catalog first. Supports dry_run and optional cache scheduling.",
+      "category": "Widgets & layout",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": true,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_update_widget",
+      "description": "WRITE: Update safe widget/datastream fields (name, content, custom_params, master_widget_config, status). Supports dry_run and optional refresh.",
+      "category": "Widgets & layout",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": true,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_delete_widget",
+      "description": "WRITE: Delete one widget/datastream and remove layout/metadata/hidden references. Supports dry_run.",
+      "category": "Widgets & layout",
+      "mode": "write",
+      "destructive": true,
+      "supports_dry_run": true,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_duplicate_widget",
+      "description": "WRITE: Duplicate a widget/datastream into a new widget id and append layout/metadata. Supports dry_run.",
+      "category": "Widgets & layout",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": true,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_hide_widget",
+      "description": "WRITE: Add one widget ID to hidden_widget_ids on an org-owned Streamboard.",
+      "category": "Widgets & layout",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_unhide_widget",
+      "description": "WRITE: Remove one widget ID from hidden_widget_ids on an org-owned Streamboard.",
+      "category": "Widgets & layout",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_update_query_config",
+      "description": "WRITE: Update date/model/currency query_config on an org-owned Streamboard. Supports dry_run and optional cache refresh.",
+      "category": "Boards",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": true,
+      "verify_with": [
+        "streamboards_get",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_get_effective_query_config",
+      "description": "Explain board-level and per-widget effective query config after merging widget custom_params.",
+      "category": "Boards",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_refresh_datastream_cache",
+      "description": "WRITE: Schedule a cache refresh for one datastream under an org-owned Streamboard. Supports dry_run.",
+      "category": "Cache & data",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": true,
+      "verify_with": [
+        "streamboards_get_cache_status",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_refresh_board_cache",
+      "description": "WRITE: Schedule cache refreshes for runnable DB datastreams on an org-owned Streamboard. Supports dry_run, stale_only, only_failed, max_datastreams.",
+      "category": "Cache & data",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": true,
+      "verify_with": [
+        "streamboards_get_cache_status",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_generate_pdf",
+      "description": "WRITE: Generate and upload a PDF snapshot for an org-owned Streamboard. Returns CDN URL and attachment metadata. Supports dry_run.",
+      "category": "Reports",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": true,
+      "verify_with": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_send_pdf_report",
+      "description": "WRITE: Generate a PDF snapshot and email it to up to 10 explicit recipients for an org-owned Streamboard. Requires confirm_send=true and confirm_emails to exactly match emails. Supports dry_run.",
+      "category": "Reports",
+      "mode": "write",
+      "destructive": true,
+      "supports_dry_run": true,
+      "verify_with": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_audit_org",
+      "description": "Audit all Streamboards in the MCP key organisation for layout, metadata, endpoint, cache, and datastream issues.",
+      "category": "Discovery & verification",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_repair_plan",
+      "description": "Generate a no-write repair plan for a Streamboard using validation and cache status.",
+      "category": "Discovery & verification",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards.ts"
+    },
+    {
+      "name": "streamboards_get_context",
+      "description": "Get the organisation, endpoint, agency, entitlements, branding and Streamboards counts inferred from this org-scoped key.",
+      "category": "Discovery & verification",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_get_capabilities",
+      "description": "Get supported Streamboards management capabilities and limits for this organisation.",
+      "category": "Discovery & verification",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_get_org_summary",
+      "description": "Get board, widget, publication, cache and template totals for the key organisation.",
+      "category": "Discovery & verification",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_list_widget_types",
+      "description": "List supported static and dynamic widget families with default sizes.",
+      "category": "Widgets & layout",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_get_widget_type_schema",
+      "description": "Get the input schema for one widget family.",
+      "category": "Widgets & layout",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_create",
+      "description": "WRITE: Create a blank board in the key organisation.",
+      "category": "Boards",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_update",
+      "description": "WRITE: Update board name, description, tags, roles or commentary.",
+      "category": "Boards",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_duplicate",
+      "description": "WRITE: Duplicate a board and widget configurations inside the key organisation without cache state, slug or publication.",
+      "category": "Boards",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_restore",
+      "description": "WRITE: Restore an archived board.",
+      "category": "Boards",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_preview_delete",
+      "description": "Describe board resources that permanent deletion would remove without writing.",
+      "category": "Boards",
+      "mode": "read",
+      "destructive": true,
+      "supports_dry_run": true,
+      "verify_with": [
+        "streamboards_get",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_list_widgets",
+      "description": "List normalized widgets joined to layout and metadata.",
+      "category": "Widgets & layout",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_get_widget",
+      "description": "Get one normalized widget with configuration, layout and cache state.",
+      "category": "Widgets & layout",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_add_static_widget",
+      "description": "WRITE: Add a static widget, including cover_page, with automatic or explicit placement.",
+      "category": "Widgets & layout",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_add_query_widget",
+      "description": "WRITE: Add a fixed query-key dynamic DB widget.",
+      "category": "Widgets & layout",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_add_master_metric_widget",
+      "description": "WRITE: Add a master_custom_metric widget with validated platform/metric/display configuration.",
+      "category": "Widgets & layout",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_preview_remove_widget",
+      "description": "Describe layout/datastream references removed with a widget.",
+      "category": "Widgets & layout",
+      "mode": "read",
+      "destructive": true,
+      "supports_dry_run": true,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_remove_widget",
+      "description": "WRITE: Atomically remove a widget from layout, metadata, hidden IDs and datastreams.",
+      "category": "Widgets & layout",
+      "mode": "write",
+      "destructive": true,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_find_layout_space",
+      "description": "Find the next available 48-column grid position for a requested widget size.",
+      "category": "Widgets & layout",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_move_widget",
+      "description": "WRITE: Move one widget without replacing the complete layout.",
+      "category": "Widgets & layout",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_resize_widget",
+      "description": "WRITE: Resize one widget with grid-bound validation.",
+      "category": "Widgets & layout",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_place_widget",
+      "description": "WRITE: Move and resize one widget atomically.",
+      "category": "Widgets & layout",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_preview_auto_layout",
+      "description": "Preview a compact non-overlapping row layout.",
+      "category": "Widgets & layout",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": true,
+      "verify_with": [
+        "streamboards_get_layout",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_get_query_config",
+      "description": "Get stored query configuration and organisation date capabilities.",
+      "category": "Boards",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_reset_query_config",
+      "description": "WRITE: Reset selected query configuration fields or all fields to defaults.",
+      "category": "Boards",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_get_publication",
+      "description": "Get slug, publication, protection and canonical URL state.",
+      "category": "Boards",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_check_slug",
+      "description": "Check a slug inside the key organisation.",
+      "category": "Publication & access",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_publication",
+        "streamboards_get_urls"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_set_slug",
+      "description": "WRITE: Set an available normalized board slug.",
+      "category": "Publication & access",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_publication",
+        "streamboards_get_urls"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_publish",
+      "description": "WRITE: Publish a board with an available slug.",
+      "category": "Publication & access",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_publication",
+        "streamboards_get_urls"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_unpublish",
+      "description": "WRITE: Make a board non-public while retaining its slug.",
+      "category": "Publication & access",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_publication",
+        "streamboards_get_urls"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_set_password",
+      "description": "WRITE: Set or replace public board password protection. Passwords are salted and hashed and never returned.",
+      "category": "Publication & access",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_publication",
+        "streamboards_get_urls"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_remove_password",
+      "description": "WRITE: Remove public board password protection.",
+      "category": "Publication & access",
+      "mode": "write",
+      "destructive": true,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_publication",
+        "streamboards_get_urls"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_create_embed_token",
+      "description": "WRITE: Create a short-lived capture/embed token for an organisation-owned board.",
+      "category": "Publication & access",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_publication",
+        "streamboards_get_urls"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_get_branding",
+      "description": "Get normalized organisation branding with agency fallback.",
+      "category": "Branding",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_branding"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_set_branding",
+      "description": "WRITE: Set organisation brand name, logo and light-theme colours.",
+      "category": "Branding",
+      "mode": "write",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get_branding"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_list_template_versions",
+      "description": "List versions for a global or agency template available to the organisation.",
+      "category": "Templates",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_get_template",
+      "description": "Get an available template and selected/current version summary.",
+      "category": "Templates",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_list_revisions",
+      "description": "List configuration revisions captured before MCP writes.",
+      "category": "Revisions",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_get_revision",
+      "description": "Get one board configuration revision.",
+      "category": "Revisions",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_preview_rollback",
+      "description": "Preview restoring a board configuration revision.",
+      "category": "Revisions",
+      "mode": "read",
+      "destructive": true,
+      "supports_dry_run": true,
+      "verify_with": [
+        "streamboards_get",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_rollback",
+      "description": "WRITE: Restore board metadata, layout and datastream configurations from a revision.",
+      "category": "Revisions",
+      "mode": "write",
+      "destructive": true,
+      "supports_dry_run": false,
+      "verify_with": [
+        "streamboards_get",
+        "streamboards_validate"
+      ],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    },
+    {
+      "name": "streamboards_diagnose",
+      "description": "Diagnose structural, endpoint, publication, connection and cache issues for one board.",
+      "category": "Discovery & verification",
+      "mode": "read",
+      "destructive": false,
+      "supports_dry_run": false,
+      "verify_with": [],
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "canonical_source": "streamboards-management.ts"
+    }
+  ]
+}
