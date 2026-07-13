@@ -1,105 +1,105 @@
-1|# Agent contract: Cosmise Streamboards
-2|
-3|## Purpose
-4|
-5|This app is the visible communications surface for an agent operating the organisation-scoped Cosmise Streamboards MCP. Use the app's local MCP endpoint to show task progress, safe operation summaries, verification, and finished reports. Call `streamboards_*` tools through the agent profile's separate production MCP connection.
-6|
-7|## Security boundary
-8|
-9|1. The MCP credential determines the organisation. Never send or trust caller-selected `org_id`, `agency_id`, or `endpoint_id` as authority.
+# Agent contract: Cosmise Streamboards
+
+## Purpose
+
+This app is the visible communications surface for an agent operating the organisation-scoped Cosmise Streamboards MCP. Use the app's local MCP endpoint to show task progress, safe operation summaries, verification, and finished reports. Call `streamboards_*` tools through the agent profile's separate production MCP connection.
+
+## Security boundary
+
+1. The MCP credential determines the organisation. Never send or trust caller-selected `org_id`, `agency_id`, or `endpoint_id` as authority.
 2. The production credential belongs only to the authorised agent profile. The app must never declare, receive, read, proxy, or store it.
 3. Never print, log, return, summarize, encode, hash, or persist a production credential.
 4. Never copy credentials into browser code, reports, activity, tasks, `.sym-data`, documentation, source, or chat.
-13|5. Use dry-run and preview tools before destructive or broad structural changes.
-14|6. Never claim asynchronous cache completion from a scheduling receipt. Poll cache status.
-15|7. Never claim email delivery. `sent: true` proves the application completed the send call, not inbox delivery.
-16|
-17|## Normal agent loop
-18|
-19|```text
-20|1. cosmise_app_start_task
-21|2. streamboards_get_context
-22|3. streamboards_get_capabilities
-23|4. streamboards_list_connections
-24|5. streamboards_list_query_catalog
-25|6. Perform requested Streamboards operations
-26|7. Emit useful progress with cosmise_app_update_task/show_message
-27|8. Verify stored state with the recommended read tools
-28|9. cosmise_app_show_verification
-29|10. cosmise_app_show_report when a report URL is available
-30|11. cosmise_app_complete_task
-31|```
-32|
-33|Do not flood the activity feed with implementation trivia. Show user-meaningful milestones, warnings, confirmation boundaries, and verified outcomes. Production MCP calls do not flow through the app, so emit sanitized milestones explicitly without copying raw secret-bearing request data.
-34|
-35|## Local communication tools
-36|
-37|### `cosmise_app_get_state`
-38|Read tasks, activity, connection status, and reports visible in the app.
-39|
-40|### `cosmise_app_start_task`
-41|Start one user-visible unit of work. Use a stable `id` when continuing the same request.
-42|
-43|```json
-44|{
-45|  "id": "monthly-performance",
-46|  "title": "Build Monthly Performance report",
-47|  "detail": "Checking connections and report requirements.",
-48|  "progress": { "current": 1, "total": 8 }
-49|}
-50|```
-51|
-52|### `cosmise_app_update_task`
-53|Update status, detail, progress, or attached resource. Valid statuses: `queued`, `running`, `waiting`, `success`, `failed`, `cancelled`.
-54|
-55|### `cosmise_app_complete_task`
-56|Complete a task only after the appropriate read/validation checks. Include machine-readable verification.
-57|
-58|### `cosmise_app_fail_task`
-59|Show a safe, actionable explanation. Never include credentials or raw upstream internals that could expose them.
-60|
-61|### `cosmise_app_show_message`
-62|Show a meaningful milestone or warning in the realtime feed.
-63|
-64|### `cosmise_app_show_verification`
-65|Display structured checks such as `organisation_scope`, `endpoint_ok`, `layout_ok`, `cache_errors`, `publication_ok`, and `stored_state`.
-66|
-67|### `cosmise_app_show_report`
-68|Add a report to the report library/viewer. URLs must be HTTPS on `cosmise.com` or a subdomain. Private report access should later use a short-lived embed token.
-69|
-70|### `cosmise_app_clear_activity`
-71|Requires `confirm: true`. Never clear activity merely to hide a failure.
-72|
-73|## Response interpretation
-74|
-75|The production MCP returns tool JSON serialized in `result.content[0].text`. Tool-level failures set `isError: true`.
-76|
-77|Common write receipts include:
-78|
-79|```text
-80|created, updated, duplicated, removed, deleted, archived,
-81|rolled_back, generated, sent, scheduled, revision,
-82|previous_revision_id, streamboard_id, widget_id, public_url
-83|```
-84|
-85|Treat those as action receipts, then verify independently.
-86|
-87|## Verification matrix
-88|
-89|| Action | Verify with | Completion rule |
-90||---|---|---|
-91|| Create/update board | `streamboards_get`, `streamboards_validate` | Board exists under key organisation and validation is acceptable |
-92|| Add/update/remove widget | `streamboards_get_widget` or `streamboards_list_widgets`, then `streamboards_validate` | Widget/layout/datastream references agree |
-93|| Layout change | `streamboards_get_layout`, `streamboards_validate` | 48-column bounds valid, no overlap/orphan errors |
-94|| Query config | `streamboards_get_effective_query_config`, `streamboards_validate` | Effective widget settings match intent |
-95|| Publish/unpublish | `streamboards_get_publication`, `streamboards_get_urls` | Stored public state and canonical URL match intent |
-96|| Cache refresh | `streamboards_get_cache_status` until terminal | No running/scheduled work remains; report success/error totals honestly |
-97|| Branding | `streamboards_get_branding` | Effective organisation branding matches requested values |
-98|| Rollback | `streamboards_get`, `streamboards_get_layout`, `streamboards_validate` | Restored revision state is present and structurally valid |
-99|| Delete | preview first; then `streamboards_list` | Board absent from organisation list |
-100|| PDF | inspect `generated`, `cdn_url`, `bytes` | Generation completed and artifact metadata exists |
-101|| Email | inspect `sent`, `recipients_sent` | Send call completed for exact confirmed recipients; delivery remains unknown |
-102|
+5. Use dry-run and preview tools before destructive or broad structural changes.
+6. Never claim asynchronous cache completion from a scheduling receipt. Poll cache status.
+7. Never claim email delivery. `sent: true` proves the application completed the send call, not inbox delivery.
+
+## Normal agent loop
+
+```text
+1. cosmise_app_start_task
+2. streamboards_get_context
+3. streamboards_get_capabilities
+4. streamboards_list_connections
+5. streamboards_list_query_catalog
+6. Perform requested Streamboards operations
+7. Emit useful progress with cosmise_app_update_task/show_message
+8. Verify stored state with the recommended read tools
+9. cosmise_app_show_verification
+10. cosmise_app_show_report when a report URL is available
+11. cosmise_app_complete_task
+```
+
+Do not flood the activity feed with implementation trivia. Show user-meaningful milestones, warnings, confirmation boundaries, and verified outcomes. Production MCP calls do not flow through the app, so emit sanitized milestones explicitly without copying raw secret-bearing request data.
+
+## Local communication tools
+
+### `cosmise_app_get_state`
+Read tasks, activity, connection status, and reports visible in the app.
+
+### `cosmise_app_start_task`
+Start one user-visible unit of work. Use a stable `id` when continuing the same request.
+
+```json
+{
+  "id": "monthly-performance",
+  "title": "Build Monthly Performance report",
+  "detail": "Checking connections and report requirements.",
+  "progress": { "current": 1, "total": 8 }
+}
+```
+
+### `cosmise_app_update_task`
+Update status, detail, progress, or attached resource. Valid statuses: `queued`, `running`, `waiting`, `success`, `failed`, `cancelled`.
+
+### `cosmise_app_complete_task`
+Complete a task only after the appropriate read/validation checks. Include machine-readable verification.
+
+### `cosmise_app_fail_task`
+Show a safe, actionable explanation. Never include credentials or raw upstream internals that could expose them.
+
+### `cosmise_app_show_message`
+Show a meaningful milestone or warning in the realtime feed.
+
+### `cosmise_app_show_verification`
+Display structured checks such as `organisation_scope`, `endpoint_ok`, `layout_ok`, `cache_errors`, `publication_ok`, and `stored_state`.
+
+### `cosmise_app_show_report`
+Add a report to the report library/viewer. URLs must be HTTPS on `cosmise.com` or a subdomain. Private report access should later use a short-lived embed token.
+
+### `cosmise_app_clear_activity`
+Requires `confirm: true`. Never clear activity merely to hide a failure.
+
+## Response interpretation
+
+The production MCP returns tool JSON serialized in `result.content[0].text`. Tool-level failures set `isError: true`.
+
+Common write receipts include:
+
+```text
+created, updated, duplicated, removed, deleted, archived,
+rolled_back, generated, sent, scheduled, revision,
+previous_revision_id, streamboard_id, widget_id, public_url
+```
+
+Treat those as action receipts, then verify independently.
+
+## Verification matrix
+
+| Action | Verify with | Completion rule |
+|---|---|---|
+| Create/update board | `streamboards_get`, `streamboards_validate` | Board exists under key organisation and validation is acceptable |
+| Add/update/remove widget | `streamboards_get_widget` or `streamboards_list_widgets`, then `streamboards_validate` | Widget/layout/datastream references agree |
+| Layout change | `streamboards_get_layout`, `streamboards_validate` | 48-column bounds valid, no overlap/orphan errors |
+| Query config | `streamboards_get_effective_query_config`, `streamboards_validate` | Effective widget settings match intent |
+| Publish/unpublish | `streamboards_get_publication`, `streamboards_get_urls` | Stored public state and canonical URL match intent |
+| Cache refresh | `streamboards_get_cache_status` until terminal | No running/scheduled work remains; report success/error totals honestly |
+| Branding | `streamboards_get_branding` | Effective organisation branding matches requested values |
+| Rollback | `streamboards_get`, `streamboards_get_layout`, `streamboards_validate` | Restored revision state is present and structurally valid |
+| Delete | preview first; then `streamboards_list` | Board absent from organisation list |
+| PDF | inspect `generated`, `cdn_url`, `bytes` | Generation completed and artifact metadata exists |
+| Email | inspect `sent`, `recipients_sent` | Send call completed for exact confirmed recipients; delivery remains unknown |
+
 ## Report-building workflow
 
 1. Discover organisation, capabilities, connections, templates, and query catalog.
@@ -151,18 +151,18 @@ Selection and adaptation loop:
 The app exposes read-only `GET /api/templates`, `GET /api/templates/:id`, and `cosmise_app_list_layout_templates`. There is deliberately no runtime import endpoint, MCP write tool, template database, extractor, or template-related environment configuration. Templates are versioned app assets.
 
 ## Destructive and external side effects
-118|
-119|- Use preview/dry-run before hard delete, broad layout replacement, rollback, cache refresh, PDF generation, or email where supported.
-120|- Hard delete requires exact confirmation required by the canonical tool.
-121|- Email requires `confirm_send: true` and an exact normalized `confirm_emails` match.
-122|- Ask the user before sending email or performing permanent deletion unless their request already provides explicit confirmation.
-123|
-124|---
-125|
-126|# Canonical Streamboards tool reference
-127|
-128|The following catalog is generated from the canonical Cosmise MCP source. Runtime `tools/list` remains authoritative for exact live input schemas and key-specific availability.
-129|
+
+- Use preview/dry-run before hard delete, broad layout replacement, rollback, cache refresh, PDF generation, or email where supported.
+- Hard delete requires exact confirmation required by the canonical tool.
+- Email requires `confirm_send: true` and an exact normalized `confirm_emails` match.
+- Ask the user before sending email or performing permanent deletion unless their request already provides explicit confirmation.
+
+---
+
+# Canonical Streamboards tool reference
+
+The following catalog is generated from the canonical Cosmise MCP source. Runtime `tools/list` remains authoritative for exact live input schemas and key-specific availability.
+
 
 Catalog total: **78 unique tools**.
 
