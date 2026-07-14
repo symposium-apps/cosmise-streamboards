@@ -178,7 +178,7 @@ test('dashboard is report-first, uses the supplied icon, and omits docs UI', asy
   assert.equal(response.status, 200);
   assert.match(html, /Streamboard reports/);
   assert.match(html, /Latest MCP calls/);
-  assert.match(html, /streamboards-dome-stack\.svg/);
+  assert.match(html, /analytics-arc-stack\.svg/);
   assert(!html.includes('Architects of Skin'));
   assert(!html.includes('MCP & API docs'));
 });
