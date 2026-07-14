@@ -73,7 +73,7 @@ function renderReports() {
   $('#report-count').textContent = reports.length;
   const container = $('#report-list');
   if (!reports.length) {
-    container.innerHTML = `<div class="panel p-10 text-center md:col-span-2 xl:col-span-3"><img class="mx-auto h-14 w-14 opacity-80" src="/assets/analytics-pill-pair.svg" alt=""><h3 class="mt-4 text-lg font-semibold">No reports yet</h3><p class="mx-auto mt-2 max-w-md text-sm leading-6 text-neutral-500">Ask the coding agent to build a Streamboard. Once it verifies the result, the report and its canonical links will appear here.</p><button class="copy-mcp-empty btn-secondary mt-5">Copy local MCP URL</button></div>`;
+    container.innerHTML = `<div class="panel p-10 text-center md:col-span-2 xl:col-span-3"><img class="mx-auto h-14 w-14 opacity-80" src="/assets/streamboards-dome-stack.svg" alt=""><h3 class="mt-4 text-lg font-semibold">No reports yet</h3><p class="mx-auto mt-2 max-w-md text-sm leading-6 text-neutral-500">Ask the coding agent to build a Streamboard. Once it verifies the result, the report and its canonical links will appear here.</p><button class="copy-mcp-empty btn-secondary mt-5">Copy local MCP URL</button></div>`;
     $$('.copy-mcp-empty').forEach((button) => button.addEventListener('click', copyMcp));
     return;
   }
@@ -82,7 +82,7 @@ function renderReports() {
     const verified = report.verification?.ok !== false && report.verification;
     return `<article class="panel flex min-h-[260px] flex-col overflow-hidden">
       <div class="flex items-start justify-between gap-4 border-b border-line bg-gradient-to-br from-blue-50 via-white to-pink-50 p-5">
-        <img class="h-10 w-10" src="/assets/analytics-pill-pair.svg" alt="">
+        <img class="h-10 w-10" src="/assets/streamboards-dome-stack.svg" alt="">
         <span class="pill ${report.status === 'failed' ? 'border-red-200 bg-red-50 text-red-700' : 'border-emerald-200 bg-white/90 text-emerald-700'}"><span class="dot ${statusClass(report.status)}"></span>${escapeHtml(report.status)}</span>
       </div>
       <div class="flex flex-1 flex-col p-5">

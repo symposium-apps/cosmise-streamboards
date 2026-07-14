@@ -1,8 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 48 48" role="img" aria-labelledby="title description">
   <title id="title">Cosmise Streamboards</title>
-  <desc id="description">A blue and pink pair of vertical analytics pills.</desc>
+  <desc id="description">Three stacked blue, purple, and pink analytics domes.</desc>
   <g stroke-linecap="round" stroke-linejoin="round" fill="none">
-    <rect x="12" y="20" width="10" height="19" rx="5" fill="#3b6dff"/>
-    <rect x="26" y="12" width="10" height="27" rx="5" fill="#ff45a0"/>
+    <path d="M9 34 A15 15 0 0 1 39 34" stroke="#3b6dff" stroke-width="5.4"/>
+    <path d="M14 34 A10 10 0 0 1 34 34" stroke="#8b3bff" stroke-width="5.4"/>
+    <path d="M19 34 A5 5 0 0 1 29 34" stroke="#ff45a0" stroke-width="5.4"/>
   </g>
 </svg>
