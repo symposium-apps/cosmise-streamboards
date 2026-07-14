@@ -9,8 +9,8 @@ const catalog = require('./data/tool-catalog.json');
 const { listLayoutTemplates, getLayoutTemplate, library: layoutLibrary } = require('./lib/layout-library');
 
 const DATA_FILE = global.__COSMISE_TEST_DATA_FILE__ || path.join(__dirname, '.sym-data', 'state.json');
-const HOST = '0.0.0.0';
-const PORT = 4322;
+const HOST = process.env.HOST || '0.0.0.0';
+const PORT = Number(process.env.PORT || 4322);
 
 const store = new AppStore({ file: DATA_FILE, profileId: 'local' });
 const mcp = createMcp({ store });
@@ -157,4 +157,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { app, store, mcp, receipt, reportUrl };
+module.exports = { app, store, mcp, receipt, reportUrl, runtimeHost: HOST, runtimePort: PORT };

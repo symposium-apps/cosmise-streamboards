@@ -10,8 +10,9 @@ const test = require('node:test');
 const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'cosmise-streamboards-test-'));
 const stateFile = path.join(temporary, 'state.json');
 global.__COSMISE_TEST_DATA_FILE__ = stateFile;
+process.env.PORT = '54321';
 
-const { app, store } = require('../server');
+const { app, store, runtimePort } = require('../server');
 let server;
 let base;
 
@@ -25,6 +26,11 @@ test.after(async () => {
   await new Promise((resolve) => server.close(resolve));
   fs.rmSync(temporary, { recursive: true, force: true });
   delete global.__COSMISE_TEST_DATA_FILE__;
+  delete process.env.PORT;
+});
+
+test('runtime obeys the port allocated by SYM-node', () => {
+  assert.equal(runtimePort, 54321);
 });
 
 async function json(url, options = {}) {
