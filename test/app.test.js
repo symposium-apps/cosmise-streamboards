@@ -43,19 +43,21 @@ test('health and docs expose the agent-only credential boundary', async () => {
   assert.equal(health.status, 200);
   assert.equal(health.body.credential_boundary, 'agent_only');
   assert.equal(health.body.production_tool_count, 78);
-  assert.equal(health.body.local_tool_count, 10);
+  assert.equal(health.body.local_tool_count, 12);
 
   const docs = await json('/api/docs/tools');
   assert.equal(docs.body.tool_count, 78);
   assert.equal(docs.body.tools.length, 78);
-  assert.equal(docs.body.local_tools.length, 10);
+  assert.equal(docs.body.local_tools.length, 12);
 });
 
 test('MCP lists local communication tools only', async () => {
   const response = await json('/mcp', { method: 'POST', body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} }) });
   assert.equal(response.status, 200);
-  assert.equal(response.body.result.tools.length, 10);
+  assert.equal(response.body.result.tools.length, 12);
   const names = new Set(response.body.result.tools.map((tool) => tool.name));
+  assert(names.has('cosmise_app_update_connection'));
+  assert(names.has('cosmise_app_log_call'));
   assert(names.has('cosmise_app_show_report'));
   assert(names.has('cosmise_app_list_layout_templates'));
   assert(!names.has('streamboards_validate'));
@@ -74,6 +76,21 @@ test('local MCP updates tasks, activity, verification, and reports', async () =>
   assert.equal(state.reports[0].streamboard_id, 'board-test');
   assert(state.events.some((event) => event.operation === 'verification.completed'));
   assert(fs.existsSync(stateFile));
+});
+
+test('local MCP records production readiness and sanitized call receipts', async () => {
+  await json('/mcp', { method: 'POST', body: JSON.stringify({ jsonrpc: '2.0', id: 20, method: 'tools/call', params: { name: 'cosmise_app_update_connection', arguments: { state: 'ready', mode: 'read_write', organisation: { name: 'Example organisation' }, message: 'Production MCP verified.' } } }) });
+  await json('/mcp', { method: 'POST', body: JSON.stringify({ jsonrpc: '2.0', id: 21, method: 'tools/call', params: { name: 'cosmise_app_log_call', arguments: { task_id: 'test-task', tool_name: 'streamboards_validate', status: 'success', detail: 'Structure verified.', duration_ms: 142, streamboard_id: 'board-test' } } }) });
+
+  const state = (await json('/api/state')).body.data;
+  assert.equal(state.connection.state, 'ready');
+  assert.equal(state.connection.configured, true);
+  assert.equal(state.connection.mode, 'read_write');
+  const call = state.events.find((event) => event.operation === 'streamboards_validate');
+  assert.equal(call.source, 'remote_mcp');
+  assert.equal(call.duration_ms, 142);
+  assert.equal(call.resource.id, 'board-test');
+  assert(!JSON.stringify(state).includes('COSMISE_MCP_KEY'));
 });
 
 test('state subscribers receive realtime updates', async () => {
@@ -150,11 +167,18 @@ test('production Streamboards calls are rejected at the app boundary', async () 
   assert(!JSON.stringify(response.body).includes('COSMISE_MCP_KEY'));
 });
 
-test('demo produces visible progress through the same state API', async () => {
-  const started = await json('/api/demo', { method: 'POST', body: '{}' });
-  assert.equal(started.status, 202);
-  await new Promise((resolve) => setTimeout(resolve, 2500));
-  const state = (await json('/api/state')).body.data;
-  assert(state.events.some((event) => event.operation === 'report.ready'));
-  assert(state.tasks.some((task) => task.title.includes('Architects of Skin')));
+test('the removed branded demo endpoint is not exposed', async () => {
+  const response = await fetch(base + '/api/demo', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
+  assert.equal(response.status, 404);
+});
+
+test('dashboard is report-first, uses the supplied icon, and omits docs UI', async () => {
+  const response = await fetch(base + '/');
+  const html = await response.text();
+  assert.equal(response.status, 200);
+  assert.match(html, /Streamboard reports/);
+  assert.match(html, /Latest MCP calls/);
+  assert.match(html, /analytics-pill-pair\.svg/);
+  assert(!html.includes('Architects of Skin'));
+  assert(!html.includes('MCP & API docs'));
 });

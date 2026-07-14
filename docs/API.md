@@ -45,7 +45,7 @@ Returns the complete browser-safe state: profile ID, connection status, tasks, a
 Returns only connection status.
 
 ### `PATCH /api/status`
-Agent status display update. Accepted states are `agent_ready`, `ready`, `working`, and `error`; safe fields include `organisation`, `endpoint`, `message`, and `last_checked_at`. Do not pass credentials.
+Agent status display update. Accepted states are `missing_key`, `checking`, `ready`, `working`, and `error`; safe fields include `mode`, `organisation`, `endpoint`, `message`, and `last_checked_at`. Do not pass credentials.
 
 ## Tasks
 
@@ -113,8 +113,10 @@ A heartbeat comment is sent every 20 seconds.
 {
   "streamboard_id": "board_123",
   "title": "Monthly Performance",
-  "url": "https://cosmise.com/board/aos/monthly-performance",
-  "public_url": "https://cosmise.com/board/aos/monthly-performance",
+  "description": "Monthly acquisition and revenue performance.",
+  "organisation": "Example organisation",
+  "url": "https://cosmise.com/board/example/monthly-performance",
+  "public_url": "https://cosmise.com/board/example/monthly-performance",
   "edit_url": "https://cosmise.com/dashboard/streamboards/board_123",
   "verification": {
     "ok": true,
@@ -136,7 +138,7 @@ Removes a local report card/viewer entry. It does not delete the remote Streambo
 ## Documentation
 
 ### `GET /api/docs/tools`
-Returns the generated 78-tool documentation catalog and 10 local communication tools. The agent should query its production MCP connection for authoritative live schemas.
+Returns the generated 78-tool documentation catalog and local communication tools. This is an agent endpoint, not a dashboard page. The agent should query its production MCP connection for authoritative live schemas.
 
 ### `GET /api/templates`
 Returns the versioned template examples bundled in `data/layout-templates.json`. Optional query parameters: `widget_type` (comma-separated), `min_widgets`, `max_widgets`, and `limit` (maximum 100). Each template includes neutral widget slots, exact `x/y/w/h` geometry, safe widget/query families, and generic display configuration.
@@ -177,8 +179,3 @@ Tool call:
 ```
 
 This endpoint accepts only `cosmise_app_*` communication tools. It rejects `streamboards_*` calls because production credentials and operations belong to the agent profile's separate MCP connection.
-
-## Development demo
-
-### `POST /api/demo`
-Available outside production. Emits a short AOS-style report-building sequence through the same state store and SSE stream. It performs no production MCP writes.

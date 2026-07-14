@@ -113,26 +113,6 @@ app.post('/mcp', asyncRoute(async (req, res) => {
   return res.json(response);
 }));
 
-app.post('/api/demo', (req, res) => {
-  const task = store.createTask({ title: 'Build Architects of Skin monthly performance Streamboard', detail: 'Preparing Streamboard context, layout pattern, and verification plan.', progress: { current: 1, total: 7 } });
-  const steps = [
-    ['success', 'streamboard.ready', 'Streamboard target selected: Architects of Skin', 'The app receives sanitized progress from the agent and never handles the organisation credential.'],
-    ['success', 'templates.selected', 'Selected a sanitized AOS-friendly report layout', 'Using versioned layout examples: cover, KPI strip, trend, source table, and recommendations.'],
-    ['running', 'mcp.discovery.plan', 'Planning MCP discovery calls', 'Would read org context, connections, query catalog, widget types, and existing boards.'],
-    ['success', 'streamboard.shell', 'Prepared Monthly Performance shell', 'Report sections and 48-column layout plan are ready.'],
-    ['running', 'widgets.creating', 'Placing report widgets', 'Cover, KPI cards, daily trend, channel table, and recommendations are being arranged.'],
-    ['success', 'validation.completed', 'Validated Streamboard structure', 'Layout bounds, widget joins, and receipt shape passed Streamboard checks.'],
-    ['success', 'report.ready', 'AOS Monthly Performance Streamboard flow is ready', 'The local receipt is verified; an authorised agent can perform the corresponding production MCP operations.']
-  ];
-  steps.forEach(([status, operation, title, detail], index) => {
-    setTimeout(() => {
-      store.updateTask(task.id, { status: index === steps.length - 1 ? 'success' : 'running', detail, progress: { current: index + 1, total: steps.length } });
-      store.addEvent({ task_id: task.id, status, operation, title, detail, verification: operation === 'validation.completed' ? { ok: true, organisation_scope: true, endpoint_ok: true, layout_ok: true, cache_errors: 0 } : null });
-    }, 350 * (index + 1));
-  });
-  return res.status(202).json(receipt('run_demo', task));
-});
-
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'], maxAge: 0 }));
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 

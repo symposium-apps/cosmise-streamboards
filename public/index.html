@@ -4,164 +4,93 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#f7f7f4">
-  <title>Cosmise Streamboards — Architects of Skin</title>
+  <title>Cosmise Streamboards</title>
+  <link rel="icon" href="/assets/analytics-pill-pair.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body class="min-h-screen">
   <div class="mx-auto min-h-screen max-w-[1500px] px-4 py-4 sm:px-6 lg:px-8">
     <header class="panel flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
       <div class="flex items-center gap-3">
-        <div class="grid h-10 w-10 place-items-center rounded-xl bg-ink text-sm font-black tracking-tight text-white">C</div>
+        <img class="h-11 w-11 rounded-xl bg-white" src="/assets/analytics-pill-pair.svg" alt="Cosmise Streamboards">
         <div>
-          <div class="flex items-center gap-2">
-            <h1 class="font-semibold tracking-tight">Cosmise Streamboards</h1>
-            <span class="rounded-full bg-mint px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-moss">Architects of Skin</span>
-          </div>
-          <p class="text-xs text-neutral-500">Agent-built Streamboards for AOS-style report work</p>
+          <h1 class="font-semibold tracking-tight">Cosmise Streamboards</h1>
+          <p class="text-xs text-neutral-500">Reports built and verified by your coding agent</p>
         </div>
       </div>
       <div class="flex flex-wrap items-center gap-2">
-        <div id="connection-pill" class="pill border-emerald-200 bg-emerald-50 text-emerald-700"><span class="dot bg-emerald-500"></span><span>Loading agent status</span></div>
+        <button id="copy-mcp" class="pill border-neutral-200 bg-white text-neutral-600" title="Copy local MCP URL"><span class="font-mono">/mcp</span><span class="text-neutral-400">Copy</span></button>
+        <div id="local-server-pill" class="pill border-amber-200 bg-amber-50 text-amber-800"><span class="dot bg-amber-500"></span><span>Connecting locally</span></div>
       </div>
     </header>
 
-    <div class="mt-4 grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
-      <aside class="panel h-fit p-3 lg:sticky lg:top-4">
-        <nav class="grid grid-cols-4 gap-1 lg:grid-cols-1" aria-label="App sections">
-          <button class="nav-button active text-left" data-page="home">Home</button>
-          <button class="nav-button text-left" data-page="reports">Reports</button>
-          <button class="nav-button text-left" data-page="templates">Layout templates</button>
-          <button class="nav-button text-left" data-page="docs">MCP & API docs</button>
-        </nav>
-        <div class="mt-4 hidden border-t border-line px-2 pt-4 lg:block">
-          <p class="text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-400">Agent endpoint</p>
-          <button id="copy-mcp" class="mt-2 w-full truncate rounded-lg bg-neutral-100 px-2 py-2 text-left font-mono text-[11px] text-neutral-600" title="Copy MCP URL">/mcp</button>
-          <p id="tool-total-side" class="mt-2 text-xs text-neutral-500">Loading tools…</p>
+    <main class="mt-4 space-y-4">
+      <section class="panel overflow-hidden">
+        <div class="flex flex-col gap-5 px-6 py-7 sm:px-8 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-[0.16em] text-moss">Report dashboard</p>
+            <h2 class="mt-2 text-3xl font-semibold tracking-[-0.035em] sm:text-4xl">Streamboard reports</h2>
+            <p class="mt-3 max-w-2xl text-sm leading-6 text-neutral-600">Your coding agent builds through the production Cosmise MCP and sends sanitized calls, progress, verification, and finished report links back here.</p>
+          </div>
+          <div class="flex items-center gap-2 text-xs text-neutral-500"><span id="report-count" class="text-2xl font-semibold text-ink">0</span><span>reports</span></div>
         </div>
-      </aside>
+      </section>
 
-      <main>
-        <section data-section="home" class="space-y-4">
-          <div class="panel overflow-hidden">
-            <div class="grid gap-8 px-6 py-8 md:grid-cols-[1.35fr_0.65fr] md:px-9 md:py-10">
-              <div>
-                <p class="text-xs font-bold uppercase tracking-[0.18em] text-moss">Architects of Skin Streamboard</p>
-                <h2 class="mt-3 max-w-3xl text-3xl font-semibold tracking-[-0.035em] sm:text-4xl">Watch the agent plan, build, verify, and present an AOS Streamboard.</h2>
-                <p class="mt-4 max-w-2xl text-sm leading-6 text-neutral-600">This is the visible MCP workbench: the agent can show status, choose sanitized layout examples, validate report structure, and surface verified report links without leaking the org key.</p>
-                <div class="mt-6 flex flex-wrap gap-2">
-                  <button id="run-demo" class="btn-primary">Run AOS Streamboard flow</button>
-                  <button class="btn-secondary" data-go="templates">Pick a layout example</button>
-                  <button class="btn-secondary" data-go="docs">MCP tools</button>
-                </div>
-              </div>
-              <div class="rounded-2xl border border-emerald-100 bg-mint p-5">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs font-bold uppercase tracking-wider text-moss">Streamboard target</span>
-                  <span id="integration-state" class="dot bg-amber-500"></span>
-                </div>
-                <p id="org-name" class="mt-8 text-xl font-semibold">Architects of Skin</p>
-                <p id="connection-message" class="mt-2 text-sm leading-6 text-neutral-600">The local app is ready to receive sanitized progress from an authorised agent.</p>
-                <dl class="mt-6 grid grid-cols-2 gap-3 border-t border-emerald-200 pt-4 text-xs">
-                  <div><dt class="text-neutral-500">Profile</dt><dd id="profile-id" class="mt-1 font-semibold">local</dd></div>
-                  <div><dt class="text-neutral-500">Grid</dt><dd class="mt-1 font-semibold">48 columns</dd></div>
-                </dl>
-              </div>
-            </div>
+      <section class="grid gap-4 md:grid-cols-3" aria-label="System readiness">
+        <article id="production-card" class="panel p-5">
+          <div class="flex items-center justify-between"><p class="text-xs font-bold uppercase tracking-wider text-neutral-400">Production MCP</p><span id="production-dot" class="dot bg-amber-500"></span></div>
+          <p id="production-title" class="mt-4 text-lg font-semibold">Key not verified</p>
+          <p id="production-message" class="mt-2 text-xs leading-5 text-neutral-500">The agent needs a production MCP key before it can build reports.</p>
+          <div class="mt-4 flex flex-wrap gap-2"><span id="production-mode" class="hidden rounded-md bg-neutral-100 px-2 py-1 text-[10px] font-semibold uppercase text-neutral-600"></span><span id="production-org" class="hidden rounded-md bg-neutral-100 px-2 py-1 text-[10px] font-semibold text-neutral-600"></span></div>
+        </article>
+        <article class="panel p-5">
+          <div class="flex items-center justify-between"><p class="text-xs font-bold uppercase tracking-wider text-neutral-400">Coding agent</p><span id="agent-dot" class="dot bg-neutral-400"></span></div>
+          <p id="agent-title" class="mt-4 text-lg font-semibold">Idle</p>
+          <p id="agent-message" class="mt-2 text-xs leading-5 text-neutral-500">Waiting for report work.</p>
+          <p id="active-count" class="mt-4 text-xs font-semibold text-neutral-500">0 active tasks</p>
+        </article>
+        <article class="panel p-5">
+          <div class="flex items-center justify-between"><p class="text-xs font-bold uppercase tracking-wider text-neutral-400">Local workspace</p><span class="dot bg-emerald-500"></span></div>
+          <p class="mt-4 text-lg font-semibold">Ready for the agent</p>
+          <p class="mt-2 text-xs leading-5 text-neutral-500">Local MCP records safe activity and report receipts. Production credentials never enter this app.</p>
+          <p id="tool-summary" class="mt-4 text-xs font-semibold text-neutral-500">Loading tool availability…</p>
+        </article>
+      </section>
+
+      <section>
+        <div id="report-list" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div class="panel p-10 text-center text-sm text-neutral-500 md:col-span-2 xl:col-span-3">Loading reports…</div>
+        </div>
+      </section>
+
+      <section class="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+        <article class="panel p-5 sm:p-6">
+          <div class="flex items-center justify-between gap-4">
+            <div><p class="text-xs font-bold uppercase tracking-wider text-neutral-400">Production activity</p><h3 class="mt-1 text-lg font-semibold">Latest MCP calls</h3></div>
+            <span id="call-total" class="pill border-neutral-200 bg-neutral-50 text-neutral-500">0 calls</span>
           </div>
+          <div id="call-list" class="mt-5 max-h-[520px] space-y-1 overflow-auto pr-1"><p class="rounded-xl border border-dashed border-line p-7 text-center text-sm text-neutral-500">Calls appear after the agent reports sanitized production MCP activity.</p></div>
+        </article>
 
-          <div class="grid gap-4 sm:grid-cols-3">
-            <div class="panel p-5"><p class="text-xs font-medium text-neutral-500">Active tasks</p><p id="active-count" class="mt-2 text-3xl font-semibold tracking-tight">0</p></div>
-            <div class="panel p-5"><p class="text-xs font-medium text-neutral-500">Reports ready</p><p id="report-count" class="mt-2 text-3xl font-semibold tracking-tight">0</p></div>
-            <div class="panel p-5"><p class="text-xs font-medium text-neutral-500">MCP tools</p><p id="tool-count" class="mt-2 text-3xl font-semibold tracking-tight">78</p></div>
+        <article class="panel p-5 sm:p-6">
+          <div class="flex items-center justify-between gap-4">
+            <div><p class="text-xs font-bold uppercase tracking-wider text-neutral-400">Work queue</p><h3 class="mt-1 text-lg font-semibold">Agent tasks</h3></div>
+            <button id="clear-activity" class="text-xs font-semibold text-neutral-500 hover:text-ink">Clear history</button>
           </div>
+          <div id="task-list" class="mt-5 space-y-3"><p class="rounded-xl border border-dashed border-line p-7 text-center text-sm text-neutral-500">No report tasks yet.</p></div>
+        </article>
+      </section>
 
-          <section class="panel p-5 sm:p-6">
-            <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-              <div>
-                <p class="text-xs font-bold uppercase tracking-wider text-neutral-400">AOS report recipe</p>
-                <h3 class="mt-1 text-lg font-semibold">What the Streamboard flow should prove</h3>
-                <p class="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">The agent uses its private production MCP connection to operate Streamboards. This app shows sanitized progress, layout choices, report receipts, and verification.</p>
-              </div>
-              <div class="grid gap-2 text-xs sm:grid-cols-2 lg:w-[520px]">
-                <div class="rounded-xl bg-neutral-100 p-3"><b>1. Discover</b><p class="mt-1 text-neutral-500">Context, connections, query catalog.</p></div>
-                <div class="rounded-xl bg-neutral-100 p-3"><b>2. Compose</b><p class="mt-1 text-neutral-500">Pick sanitized layout template.</p></div>
-                <div class="rounded-xl bg-neutral-100 p-3"><b>3. Build</b><p class="mt-1 text-neutral-500">Add cover, KPI, trend, table, notes.</p></div>
-                <div class="rounded-xl bg-neutral-100 p-3"><b>4. Verify</b><p class="mt-1 text-neutral-500">Validate layout/cache/public URL before claiming done.</p></div>
-              </div>
-            </div>
-          </section>
-
-          <div class="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-            <section class="panel p-5 sm:p-6">
-              <div class="flex items-center justify-between"><div><p class="text-xs font-bold uppercase tracking-wider text-neutral-400">Current work</p><h3 class="mt-1 text-lg font-semibold">Agent tasks</h3></div><span id="live-pill" class="pill border-emerald-200 bg-emerald-50 text-emerald-700"><span class="dot bg-emerald-500"></span>Live</span></div>
-              <div id="task-list" class="mt-5 space-y-3"><p class="rounded-xl border border-dashed border-line p-6 text-center text-sm text-neutral-500">No tasks yet. Run the demo or let Hermes start one.</p></div>
-            </section>
-
-            <section class="panel p-5 sm:p-6">
-              <div class="flex items-center justify-between"><div><p class="text-xs font-bold uppercase tracking-wider text-neutral-400">Realtime</p><h3 class="mt-1 text-lg font-semibold">Agent activity</h3></div><button id="clear-activity" class="text-xs font-semibold text-neutral-500 hover:text-ink">Clear</button></div>
-              <div id="activity-list" class="mt-5 max-h-[540px] space-y-1 overflow-auto pr-1"><p class="rounded-xl border border-dashed border-line p-6 text-center text-sm text-neutral-500">Activity appears here as the agent works.</p></div>
-            </section>
-          </div>
-        </section>
-
-        <section data-section="reports" class="hidden space-y-4">
-          <div class="panel px-6 py-7 sm:px-8"><p class="text-xs font-bold uppercase tracking-[0.16em] text-moss">Report library</p><h2 class="mt-2 text-3xl font-semibold tracking-tight">Reports the agent has prepared</h2><p class="mt-2 max-w-2xl text-sm text-neutral-600">Open a report here, launch the canonical URL, or continue editing in Cosmise. Private reports use short-lived server-created embed access later.</p></div>
-          <div id="report-list" class="grid gap-4 md:grid-cols-2"><div class="panel p-8 text-center text-sm text-neutral-500 md:col-span-2">No reports are visible yet.</div></div>
-        </section>
-
-        <section data-section="templates" class="hidden space-y-4">
-          <div class="panel px-6 py-7 sm:px-8">
-            <p class="text-xs font-bold uppercase tracking-[0.16em] text-moss">Sanitized design intelligence</p>
-            <h2 class="mt-2 text-3xl font-semibold tracking-tight">Versioned layout examples</h2>
-            <p class="mt-2 max-w-3xl text-sm leading-6 text-neutral-600">Versioned examples with exact 48-column geometry and reusable widget compositions. They ship with the app and contain no client names, report text, branding, source IDs, URLs, configuration values, or report data.</p>
-            <div class="mt-5 grid gap-3 sm:grid-cols-4">
-              <div class="rounded-xl bg-neutral-100 p-4"><p class="text-xs text-neutral-500">Reports learned</p><p id="template-report-count" class="mt-1 text-2xl font-semibold">—</p></div>
-              <div class="rounded-xl bg-neutral-100 p-4"><p class="text-xs text-neutral-500">Sanitized widgets</p><p id="template-widget-count" class="mt-1 text-2xl font-semibold">—</p></div>
-              <div class="rounded-xl bg-neutral-100 p-4"><p class="text-xs text-neutral-500">Unique layouts</p><p id="template-layout-count" class="mt-1 text-2xl font-semibold">—</p></div>
-              <div class="rounded-xl bg-neutral-100 p-4"><p class="text-xs text-neutral-500">Grid</p><p class="mt-1 text-2xl font-semibold">48 cols</p></div>
-            </div>
-          </div>
-          <div class="panel p-5 sm:p-6">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h3 class="text-lg font-semibold">Pattern library</h3><p class="text-xs text-neutral-500">Composition references to adapt—not customer reports to clone.</p></div><input id="template-search" class="rounded-xl border border-line bg-white px-4 py-2 text-sm outline-none ring-moss focus:ring-2" type="search" placeholder="Search widget type…"></div>
-            <div id="template-list" class="mt-5 grid gap-4 xl:grid-cols-2"><div class="p-8 text-center text-sm text-neutral-500 xl:col-span-2">Loading templates…</div></div>
-          </div>
-        </section>
-
-        <section data-section="docs" class="hidden space-y-4">
-          <div class="panel px-6 py-7 sm:px-8">
-            <p class="text-xs font-bold uppercase tracking-[0.16em] text-moss">Agent reference</p>
-            <h2 class="mt-2 text-3xl font-semibold tracking-tight">Streamboards MCP & local app API</h2>
-            <p class="mt-2 max-w-3xl text-sm leading-6 text-neutral-600">The agent calls the production MCP directly with its private credential. This app exposes only local communication tools for progress, verification, layout examples, and report links.</p>
-            <div class="mt-5 grid gap-3 sm:grid-cols-3">
-              <div class="rounded-xl bg-neutral-100 p-4"><p class="text-xs text-neutral-500">Production tools</p><p id="docs-remote-count" class="mt-1 text-2xl font-semibold">78</p></div>
-              <div class="rounded-xl bg-neutral-100 p-4"><p class="text-xs text-neutral-500">Local communication tools</p><p id="docs-local-count" class="mt-1 text-2xl font-semibold">10</p></div>
-              <div class="rounded-xl bg-neutral-100 p-4"><p class="text-xs text-neutral-500">Transport</p><p class="mt-1 font-mono text-sm font-semibold">JSON-RPC /mcp</p></div>
-            </div>
-          </div>
-
-          <div class="panel p-5 sm:p-6">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><h3 class="text-lg font-semibold">Tool catalog</h3><p class="text-xs text-neutral-500">Generated from the canonical Cosmise MCP source.</p></div><input id="tool-search" class="rounded-xl border border-line bg-white px-4 py-2 text-sm outline-none ring-moss focus:ring-2" type="search" placeholder="Search tools…"></div>
-            <div id="category-filters" class="mt-4 flex flex-wrap gap-2"></div>
-            <div id="tool-list" class="mt-5 divide-y divide-line"></div>
-          </div>
-
-          <div class="panel p-5 sm:p-6">
-            <h3 class="text-lg font-semibold">Agent verification rule</h3>
-            <pre class="mt-4 overflow-auto rounded-xl bg-neutral-950 p-5 text-xs leading-6 text-neutral-100"><code>Perform action
-→ inspect structured receipt
-→ call the recommended read/validation tool
-→ compare intended state with stored state
-→ report only what was verified</code></pre>
-            <p class="mt-4 text-sm text-neutral-600">Full operating guidance is included in <span class="code">docs/AGENT.md</span>. The app never receives production credentials; secrets also never enter browser data, activity, docs, logs, or receipts.</p>
-          </div>
-        </section>
-      </main>
-    </div>
+      <section class="panel p-5 sm:p-6">
+        <div class="flex items-center justify-between"><div><p class="text-xs font-bold uppercase tracking-wider text-neutral-400">Agent log</p><h3 class="mt-1 text-lg font-semibold">Recent activity</h3></div><span id="activity-live" class="pill border-emerald-200 bg-emerald-50 text-emerald-700"><span class="dot bg-emerald-500"></span>Live</span></div>
+        <div id="activity-list" class="mt-5 grid gap-2 lg:grid-cols-2"><p class="rounded-xl border border-dashed border-line p-7 text-center text-sm text-neutral-500 lg:col-span-2">Verification and agent milestones appear here.</p></div>
+      </section>
+    </main>
   </div>
 
   <div id="report-viewer" class="fixed inset-0 z-50 hidden bg-black/60 p-3 backdrop-blur-sm sm:p-6" role="dialog" aria-modal="true" aria-label="Report viewer">
     <div class="mx-auto flex h-full max-w-[1500px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-      <div class="flex items-center justify-between border-b border-line px-4 py-3"><div><p class="text-xs text-neutral-500">Streamboards report</p><h3 id="viewer-title" class="font-semibold">Report</h3></div><div class="flex gap-2"><a id="viewer-open" class="btn-secondary" target="_blank" rel="noopener noreferrer">Open</a><button id="viewer-close" class="btn-primary">Close</button></div></div>
+      <div class="flex items-center justify-between border-b border-line px-4 py-3"><div><p class="text-xs text-neutral-500">Streamboard report</p><h3 id="viewer-title" class="font-semibold">Report</h3></div><div class="flex gap-2"><a id="viewer-open" class="btn-secondary" target="_blank" rel="noopener noreferrer">Open</a><button id="viewer-close" class="btn-primary">Close</button></div></div>
       <iframe id="viewer-frame" class="min-h-0 flex-1 bg-white" title="Streamboards report"></iframe>
     </div>
   </div>

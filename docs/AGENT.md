@@ -18,24 +18,32 @@ This app is the visible communications surface for an agent operating the organi
 
 ```text
 1. cosmise_app_start_task
-2. streamboards_get_context
-3. streamboards_get_capabilities
-4. streamboards_list_connections
-5. streamboards_list_query_catalog
-6. Perform requested Streamboards operations
-7. Emit useful progress with cosmise_app_update_task/show_message
-8. Verify stored state with the recommended read tools
-9. cosmise_app_show_verification
-10. cosmise_app_show_report when a report URL is available
-11. cosmise_app_complete_task
+2. Check the separate production MCP connection
+3. cosmise_app_update_connection (missing_key, checking, ready, working, or error)
+4. streamboards_get_context
+5. streamboards_get_capabilities
+6. streamboards_list_connections
+7. streamboards_list_query_catalog
+8. Perform requested Streamboards operations
+9. Emit each sanitized production call receipt with cosmise_app_log_call
+10. Emit useful progress with cosmise_app_update_task/show_message
+11. Verify stored state with the recommended read tools
+12. cosmise_app_show_verification
+13. cosmise_app_show_report when a report URL is available
+14. cosmise_app_complete_task
 ```
 
 Do not flood the activity feed with implementation trivia. Show user-meaningful milestones, warnings, confirmation boundaries, and verified outcomes. Production MCP calls do not flow through the app, so emit sanitized milestones explicitly without copying raw secret-bearing request data.
+
+If production MCP access is unavailable, immediately call `cosmise_app_update_connection` with `state: "missing_key"` and an actionable message, leave the report task in `waiting`, and stop before attempting production operations. Never send the key, key prefix, authorization header, or raw connection configuration to this app.
 
 ## Local communication tools
 
 ### `cosmise_app_get_state`
 Read tasks, activity, connection status, and reports visible in the app.
+
+### `cosmise_app_update_connection`
+Publish production MCP readiness to the dashboard. Valid states are `missing_key`, `checking`, `ready`, `working`, and `error`; optional modes are `read` and `read_write`. This is status reporting only—the local app must never receive or inspect the credential.
 
 ### `cosmise_app_start_task`
 Start one user-visible unit of work. Use a stable `id` when continuing the same request.
@@ -60,6 +68,9 @@ Show a safe, actionable explanation. Never include credentials or raw upstream i
 
 ### `cosmise_app_show_message`
 Show a meaningful milestone or warning in the realtime feed.
+
+### `cosmise_app_log_call`
+Record one sanitized `streamboards_*` production call for the dashboard. Include tool name, status, concise detail, optional duration, and optional Streamboard ID. Do not include arguments, headers, credentials, upstream payloads, query results, or sensitive identifiers.
 
 ### `cosmise_app_show_verification`
 Display structured checks such as `organisation_scope`, `endpoint_ok`, `layout_ok`, `cache_errors`, `publication_ok`, and `stored_state`.

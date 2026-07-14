@@ -4,11 +4,11 @@ A local-first Symposium app that makes agent-driven Streamboards work visible.
 
 ## What it does
 
-- exposes the canonical 78-tool Streamboards MCP catalog;
+- keeps the canonical 78-tool Streamboards MCP catalog in agent-readable documentation;
 - provides a local JSON-RPC MCP endpoint with app communication tools for Hermes;
 - keeps production Streamboards credentials and calls inside the authorised agent profile;
 - turns sanitized agent updates into realtime activity;
-- gives Hermes local communication tools for tasks, messages, verification, reports, and layout-template selection;
+- gives the coding agent local communication tools for connection readiness, call receipts, tasks, messages, verification, reports, and layout-template selection;
 - ships versioned sanitized layout examples as app files;
 - streams UI updates over Server-Sent Events;
 - persists local activity under `.sym-data/`;
@@ -91,7 +91,7 @@ Forbidden template data:
 - `GET /api/templates`
 - `GET /api/templates/:id`
 - `GET /api/events/stream` (SSE)
-- `POST /api/demo`
+
 
 ### Agent MCP
 
@@ -99,7 +99,7 @@ Forbidden template data:
 POST /mcp
 ```
 
-Supports MCP JSON-RPC `initialize`, `ping`, `tools/list`, and `tools/call`. It exposes 10 local app communication tools. The 78 production Streamboards tools remain documented in the app but must be called through the agent's separately configured production MCP connection. Use `cosmise_app_list_layout_templates` to find bundled composition examples by widget type or widget count.
+Supports MCP JSON-RPC `initialize`, `ping`, `tools/list`, and `tools/call`. It exposes 12 local app communication tools. The 78 production Streamboards tools are documented for the coding agent but must be called through the agent's separately configured production MCP connection. Use `cosmise_app_update_connection` to publish readiness, `cosmise_app_log_call` to publish sanitized production call receipts, and `cosmise_app_list_layout_templates` to find bundled composition examples.
 
 ## Verification
 
