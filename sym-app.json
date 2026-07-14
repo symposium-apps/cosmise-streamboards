@@ -35,8 +35,5 @@
     "category": "analytics",
     "icon": "assets/icon.svg",
     "accent_color": "#175D4C"
-  },
-  "handle": {
-    "suggested": "cosmise-streamboards"
   }
 }
