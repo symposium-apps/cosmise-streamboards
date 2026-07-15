@@ -31,7 +31,7 @@
     "persistent_paths": [".sym-data"]
   },
   "marketplace": {
-    "subtitle": "Agent-built reports, visible as they happen",
+    "subtitle": "Cosmise Streamboards",
     "category": "analytics",
     "icon": "assets/icon.svg",
     "accent_color": "#175D4C"

@@ -186,6 +186,12 @@ test('workspace uses the supplied Streamboards shell and omits docs UI', async (
   assert.match(html, /cosmise-mascot\.png/);
   assert(!html.includes('Architects of Skin'));
   assert(!html.includes('MCP & API docs'));
+
+  const appResponse = await fetch(base + '/app.js');
+  const app = await appResponse.text();
+  assert.equal(appResponse.status, 200);
+  assert.match(app, /Tell an agent to create a Cosmise Streamboard/);
+  assert.doesNotMatch(app, /mini-toggle/);
 });
 
 test('Mini-Sym exposes the supplied compact live-state surface', async () => {
