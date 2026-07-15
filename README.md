@@ -8,6 +8,7 @@ A local-first Symposium app that makes agent-driven Streamboards work visible.
 - provides a local JSON-RPC MCP endpoint with app communication tools for Hermes;
 - keeps production Streamboards credentials and calls inside the authorised agent profile;
 - turns sanitized agent updates into realtime activity;
+- tells connected agents through MCP initialization instructions to mirror meaningful production calls into the live **Building now** status;
 - gives the coding agent local communication tools for connection readiness, call receipts, tasks, messages, verification, reports, and layout-template selection;
 - ships versioned sanitized layout examples as app files;
 - streams UI updates over Server-Sent Events;
@@ -86,6 +87,8 @@ Forbidden template data:
 - `GET/POST /api/tasks`
 - `PATCH /api/tasks/:id`
 - `GET/POST/DELETE /api/activity`
+- `GET /api/agent/instructions`
+- `POST /api/agent/calls`
 - `GET/POST /api/reports`
 - `GET /api/docs/tools`
 - `GET /api/templates`
@@ -99,7 +102,7 @@ Forbidden template data:
 POST /mcp
 ```
 
-Supports MCP JSON-RPC `initialize`, `ping`, `tools/list`, and `tools/call`. It exposes 12 local app communication tools. The 78 production Streamboards tools are documented for the coding agent but must be called through the agent's separately configured production MCP connection. Use `cosmise_app_update_connection` to publish readiness, `cosmise_app_log_call` to publish sanitized production call receipts, and `cosmise_app_list_layout_templates` to find bundled composition examples.
+Supports MCP JSON-RPC `initialize`, `ping`, `tools/list`, and `tools/call`. It exposes 13 local app communication tools. The MCP initialize response includes the live-observation instruction, and `cosmise_app_observe_call` accepts paired before/after updates that drive the existing **Building now** bar through SSE. The 78 production Streamboards tools remain on the agent's separate production MCP connection; this app receives only sanitized telemetry, never credentials or raw API payloads.
 
 ## Verification
 

@@ -24,16 +24,17 @@ This app is the visible communications surface for an agent operating the organi
 5. streamboards_get_capabilities
 6. streamboards_list_connections
 7. streamboards_list_query_catalog
-8. Perform requested Streamboards operations
-9. Emit each sanitized production call receipt with cosmise_app_log_call
-10. Emit useful progress with cosmise_app_update_task/show_message
-11. Verify stored state with the recommended read tools
-12. cosmise_app_show_verification
-13. cosmise_app_show_report when a report URL is available
-14. cosmise_app_complete_task
+8. Before every meaningful production MCP call, call `cosmise_app_observe_call` with `status: "running"`
+9. After the production call, call `cosmise_app_observe_call` again with the same `call_id`, `status: "success"` or `"failed"`, and a safe summary of what was learned
+10. Perform requested Streamboards operations while continuing those paired observations
+11. Emit broader task progress with cosmise_app_update_task/show_message
+12. Verify stored state with the recommended read tools
+13. cosmise_app_show_verification
+14. cosmise_app_show_report when a report URL is available
+15. cosmise_app_complete_task
 ```
 
-Do not flood the activity feed with implementation trivia. Show user-meaningful milestones, warnings, confirmation boundaries, and verified outcomes. Production MCP calls do not flow through the app, so emit sanitized milestones explicitly without copying raw secret-bearing request data.
+Production MCP calls do not flow through the app automatically. The paired `cosmise_app_observe_call` calls are therefore required whenever this app has an active task. They are what make the existing **Building now** bar show what the agent is reading, learning, building, refreshing, verifying, and publishing in realtime. Do not send implementation trivia or raw payloads; send user-meaningful summaries only.
 
 If production MCP access is unavailable, immediately call `cosmise_app_update_connection` with `state: "missing_key"` and an actionable message, leave the report task in `waiting`, and stop before attempting production operations. Never send the key, key prefix, authorization header, or raw connection configuration to this app.
 
@@ -71,6 +72,43 @@ Show a meaningful milestone or warning in the realtime feed.
 
 ### `cosmise_app_log_call`
 Record one sanitized `streamboards_*` production call for the dashboard. Include tool name, status, concise detail, optional duration, and optional Streamboard ID. Do not include arguments, headers, credentials, upstream payloads, query results, or sensitive identifiers.
+
+### `cosmise_app_observe_call`
+Use this companion tool around every meaningful production Cosmise MCP call while a visible task is active. It supports Streamboards and connected metric-source tools such as GA4, Google Ads, Meta Ads, Shopify, Search Console, Pinterest, TikTok, and Campaigns.
+
+The same payload can be posted to the local HTTP endpoint `POST /api/agent/calls`. Agents can read the current instruction and endpoint from `GET /api/agent/instructions`; MCP clients also receive the instruction in the `initialize` response.
+
+Before the production call:
+
+```json
+{
+  "task_id": "monthly-performance",
+  "call_id": "metric-catalog-1",
+  "tool_name": "streamboards_list_query_catalog",
+  "phase": "reading",
+  "status": "running",
+  "message": "Reading the available GA4 and Google Ads metrics."
+}
+```
+
+After it returns, reuse the same `call_id` so the live event is updated rather than duplicated:
+
+```json
+{
+  "task_id": "monthly-performance",
+  "call_id": "metric-catalog-1",
+  "tool_name": "streamboards_list_query_catalog",
+  "phase": "learning",
+  "status": "success",
+  "message": "Found supported GA4 and Google Ads metrics.",
+  "learned": [
+    "GA4 supports sessions, users, engagement, conversion rate and revenue",
+    "Google Ads supports spend, impressions, clicks, conversions and CPA"
+  ]
+}
+```
+
+Allowed phases are `reading`, `learning`, `building`, `refreshing`, `verifying`, and `publishing`. Never include credentials, authorization headers, raw arguments, raw API responses, account IDs, customer IDs, property IDs, or other sensitive identifiers.
 
 ### `cosmise_app_show_verification`
 Display structured checks such as `organisation_scope`, `endpoint_ok`, `layout_ok`, `cache_errors`, `publication_ok`, and `stored_state`.

@@ -43,21 +43,31 @@ test('health and docs expose the agent-only credential boundary', async () => {
   assert.equal(health.status, 200);
   assert.equal(health.body.credential_boundary, 'agent_only');
   assert.equal(health.body.production_tool_count, 78);
-  assert.equal(health.body.local_tool_count, 12);
+  assert.equal(health.body.local_tool_count, 13);
 
   const docs = await json('/api/docs/tools');
   assert.equal(docs.body.tool_count, 78);
   assert.equal(docs.body.tools.length, 78);
-  assert.equal(docs.body.local_tools.length, 12);
+  assert.equal(docs.body.local_tools.length, 13);
+});
+
+test('MCP initialization tells the agent to mirror production calls', async () => {
+  const response = await json('/mcp', { method: 'POST', body: JSON.stringify({ jsonrpc: '2.0', id: 0, method: 'initialize', params: { protocolVersion: '2025-03-26', capabilities: {}, clientInfo: { name: 'test', version: '1' } } }) });
+  assert.equal(response.status, 200);
+  assert.match(response.body.result.instructions, /cosmise_app_observe_call/);
+  assert.match(response.body.result.instructions, /before the production call/i);
+  assert.match(response.body.result.instructions, /same call_id/i);
+  assert.match(response.body.result.instructions, /never send credentials/i);
 });
 
 test('MCP lists local communication tools only', async () => {
   const response = await json('/mcp', { method: 'POST', body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} }) });
   assert.equal(response.status, 200);
-  assert.equal(response.body.result.tools.length, 12);
+  assert.equal(response.body.result.tools.length, 13);
   const names = new Set(response.body.result.tools.map((tool) => tool.name));
   assert(names.has('cosmise_app_update_connection'));
   assert(names.has('cosmise_app_log_call'));
+  assert(names.has('cosmise_app_observe_call'));
   assert(names.has('cosmise_app_show_report'));
   assert(names.has('cosmise_app_list_layout_templates'));
   assert(!names.has('streamboards_validate'));
@@ -92,6 +102,62 @@ test('local MCP records production readiness and sanitized call receipts', async
   assert.equal(call.duration_ms, 142);
   assert.equal(call.resource.id, 'board-test');
   assert(!JSON.stringify(state).includes('COSMISE_MCP_KEY'));
+});
+
+test('paired API observations update one live learning event', async () => {
+  const instructions = await json('/api/agent/instructions');
+  assert.equal(instructions.status, 200);
+  assert.equal(instructions.body.data.endpoint, '/api/agent/calls');
+  assert.match(instructions.body.data.instructions, /same call_id/);
+
+  const running = { task_id: 'test-task', call_id: 'ga4-catalog-1', tool_name: 'ga4_list_custom_metrics', phase: 'reading', status: 'running', message: 'Reading the available GA4 custom metrics.' };
+  const learned = { ...running, phase: 'learning', status: 'success', message: 'Found the available GA4 custom metrics.', learned: ['Sessions and revenue are available', 'Three custom metrics are configured'], duration_ms: 84 };
+  for (const args of [running, learned]) {
+    const response = await json('/api/agent/calls', { method: 'POST', body: JSON.stringify(args) });
+    assert.equal(response.status, 201);
+  }
+
+  const state = (await json('/api/state')).body.data;
+  const observations = state.events.filter((event) => event.call_id === 'ga4-catalog-1');
+  assert.equal(observations.length, 1);
+  assert.equal(observations[0].source, 'remote_mcp');
+  assert.equal(observations[0].status, 'success');
+  assert.equal(observations[0].phase, 'learning');
+  assert.equal(observations[0].operation, 'ga4_list_custom_metrics');
+  assert.deepEqual(observations[0].learned, learned.learned);
+  assert.equal(observations[0].duration_ms, 84);
+});
+
+test('agent instructions and paired observations are also available over local HTTP', async () => {
+  const instructions = await json('/api/agent/instructions');
+  assert.equal(instructions.status, 200);
+  assert.equal(instructions.body.data.endpoint, '/api/agent/calls');
+  assert.match(instructions.body.data.instructions, /cosmise_app_observe_call/);
+
+  const observed = await json('/api/agent/calls', { method: 'POST', body: JSON.stringify({
+    task_id: 'test-task',
+    call_id: 'google-ads-http-1',
+    tool_name: 'google_ads_list_campaigns',
+    phase: 'reading',
+    status: 'running',
+    message: 'Reading available Google Ads campaigns.'
+  }) });
+  assert.equal(observed.status, 201);
+  assert.equal(observed.body.data.event.call_id, 'google-ads-http-1');
+  assert.equal(observed.body.data.event.source, 'remote_mcp');
+});
+
+test('agent observations reject unrelated tools and credential material', async () => {
+  const baseArgs = { task_id: 'test-task', call_id: 'unsafe-1', phase: 'reading', status: 'running', message: 'Reading safe metadata.' };
+  const unrelated = await json('/mcp', { method: 'POST', body: JSON.stringify({ jsonrpc: '2.0', id: 32, method: 'tools/call', params: { name: 'cosmise_app_observe_call', arguments: { ...baseArgs, tool_name: 'terminal_execute' } } }) });
+  assert.equal(unrelated.body.result.isError, true);
+  assert.match(JSON.parse(unrelated.body.result.content[0].text).error, /approved Cosmise MCP tool/);
+
+  const secret = await json('/mcp', { method: 'POST', body: JSON.stringify({ jsonrpc: '2.0', id: 33, method: 'tools/call', params: { name: 'cosmise_app_observe_call', arguments: { ...baseArgs, call_id: 'unsafe-2', tool_name: 'streamboards_get_context', message: 'Bearer not-a-real-secret-value' } } }) });
+  assert.equal(secret.body.result.isError, true);
+  const parsed = JSON.parse(secret.body.result.content[0].text);
+  assert.match(parsed.error, /must not contain credentials/);
+  assert(!JSON.stringify((await json('/api/state')).body.data).includes('not-a-real-secret-value'));
 });
 
 test('state subscribers receive realtime updates', async () => {
@@ -191,6 +257,7 @@ test('workspace uses the supplied Streamboards shell and omits docs UI', async (
   const app = await appResponse.text();
   assert.equal(appResponse.status, 200);
   assert.match(app, /Tell an agent to create a Cosmise Streamboard/);
+  assert.match(app, /Building now/);
   assert.doesNotMatch(app, /mini-toggle/);
 });
 

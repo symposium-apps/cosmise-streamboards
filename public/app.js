@@ -128,7 +128,18 @@ function renderTabs() {
 }
 
 function taskOperation(task) {
-  return (ui.state?.events || []).find((event) => event.task_id === task?.id && String(event.operation || '').startsWith('streamboards_')) || null;
+  return (ui.state?.events || []).find((event) => event.task_id === task?.id && event.source === 'remote_mcp') || null;
+}
+
+function phaseLabel(event, task) {
+  const labels = { reading: 'Reading', learning: 'Learning', building: 'Building', refreshing: 'Refreshing', verifying: 'Verifying', publishing: 'Publishing' };
+  return labels[event?.phase] || (task?.status === 'running' ? 'Preparing' : task?.status || 'Working');
+}
+
+function observationDetail(event, fallback, includeLearned = false) {
+  if (!event) return fallback;
+  const learned = includeLearned && Array.isArray(event.learned) ? event.learned.filter(Boolean).slice(0, 2) : [];
+  return [event.detail || event.title, learned.length ? learned.join(' · ') : ''].filter(Boolean).join(' — ');
 }
 
 function renderAgent() {
@@ -138,10 +149,10 @@ function renderAgent() {
     element.hidden = false;
     const value = progress(task);
     const operation = taskOperation(task);
-    const detail = operation?.detail || task.detail || 'Working on the next verified report step.';
-    const operationName = operation?.operation || (task.status === 'running' ? 'building' : task.status);
+    const detail = observationDetail(operation, task.detail || 'Preparing the next report step.');
+    const phase = phaseLabel(operation, task);
     element.className = 'agent working';
-    element.innerHTML = `<span class="dot"></span><div class="msg"><b>${escapeHtml(task.title)}</b> · <span class="op">${escapeHtml(operationName)}</span> ${escapeHtml(detail)}</div><span class="pill">${value.total ? `${value.current} / ${value.total} widgets` : 'Agent working'}</span>${value.total ? `<div class="barwrap"><progress max="${value.total}" value="${value.current}">${value.percent}%</progress></div>` : ''}`;
+    element.innerHTML = `<span class="dot"></span><div class="msg"><b>Building now</b> · ${escapeHtml(detail)}</div><span class="pill">${value.total ? `${value.current} / ${value.total} widgets` : escapeHtml(phase)}</span>${value.total ? `<div class="barwrap"><progress max="${value.total}" value="${value.current}">${value.percent}%</progress></div>` : ''}`;
     return;
   }
   element.hidden = true;
@@ -163,13 +174,14 @@ function renderToolbar(entry) {
 function buildLog(task) {
   const events = (ui.state?.events || []).filter((event) => event.task_id === task?.id).slice(0, 4);
   if (!events.length) return '';
-  return `<div class="log">${events.map((event) => `<div class="l"><span class="c">${event.status === 'success' ? '✓' : '▸'}</span><span><b>${escapeHtml(event.operation || 'agent')}</b> ${escapeHtml(event.detail || event.title || event.status)}</span></div>`).join('')}</div>`;
+  return `<div class="log">${events.map((event) => `<div class="l"><span class="c">${event.status === 'success' ? '✓' : '▸'}</span><span><b>${escapeHtml(event.source === 'remote_mcp' ? phaseLabel(event) : event.operation || 'agent')}</b> ${escapeHtml(observationDetail(event, event.detail || event.title || event.status, true))}</span></div>`).join('')}</div>`;
 }
 
 function contentSignature(entry) {
   if (!entry) return 'welcome';
   if (entry.status === 'ready') return `ready:${entry.key}:${entry.report?.url}:${entry.report?.updated_at}`;
-  const latest = (ui.state?.events || []).find((event) => event.task_id === entry.task?.id)?.id || '';
+  const event = (ui.state?.events || []).find((item) => item.task_id === entry.task?.id);
+  const latest = event ? `${event.id}:${event.updated_at || event.created_at}:${event.status}:${event.detail}:${JSON.stringify(event.learned || [])}` : '';
   return `${entry.status}:${entry.key}:${entry.task?.updated_at}:${latest}`;
 }
 
@@ -190,9 +202,11 @@ function renderContent(entry, force = false) {
   }
   const task = entry.task || {};
   const value = progress(task);
+  const operation = taskOperation(task);
+  const liveDetail = observationDetail(operation, task.detail || 'Composing your Streamboard…');
   const failed = entry.status === 'failed';
   const queued = entry.status === 'queued';
-  content.innerHTML = `<div class="empty"><div class="m"><img src="/assets/cosmise-mascot.png" alt="">${queued || failed ? '' : '<span class="spin"></span>'}</div><h2>${failed ? 'Report build needs attention' : 'Report not built yet'}</h2><p>${failed ? escapeHtml(task.detail || 'The coding agent could not complete this Streamboard.') : queued ? 'This Streamboard is queued. The coding agent will start composing it shortly.' : 'The coding agent is composing this Streamboard right now. It’ll render here the moment every widget is verified.'}</p><div class="st ${entry.status}"><span class="d"></span>${failed ? 'Build failed' : queued ? 'Queued' : `Building${value.total ? ` · ${value.current} / ${value.total} widgets` : ''}`}</div>${!failed && !queued && value.total ? `<div class="pbar"><progress max="${value.total}" value="${value.current}">${value.percent}%</progress></div>` : ''}${buildLog(task)}</div>`;
+  content.innerHTML = `<div class="empty"><div class="m"><img src="/assets/cosmise-mascot.png" alt="">${queued || failed ? '' : '<span class="spin"></span>'}</div><h2>${failed ? 'Report build needs attention' : 'Report not built yet'}</h2><p>${failed ? escapeHtml(task.detail || 'The coding agent could not complete this Streamboard.') : queued ? 'This Streamboard is queued. The coding agent will start composing it shortly.' : 'The coding agent is composing this Streamboard right now. It’ll render here the moment every widget is verified.'}</p><div class="st ${entry.status}"><span class="d"></span>${failed ? 'Build failed' : queued ? 'Queued' : `Building now · ${escapeHtml(liveDetail)}${value.total ? ` · ${value.current} / ${value.total} widgets` : ''}`}</div>${!failed && !queued && value.total ? `<div class="pbar"><progress max="${value.total}" value="${value.current}">${value.percent}%</progress></div>` : ''}${buildLog(task)}</div>`;
 }
 
 function render(forceContent = false) {

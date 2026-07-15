@@ -4,7 +4,7 @@ const express = require('express');
 const os = require('node:os');
 const path = require('node:path');
 const { AppStore } = require('./lib/store');
-const { createMcp, LOCAL_TOOLS } = require('./lib/mcp');
+const { AGENT_INSTRUCTIONS, createMcp, LOCAL_TOOLS } = require('./lib/mcp');
 const catalog = require('./data/tool-catalog.json');
 const { listLayoutTemplates, getLayoutTemplate, library: layoutLibrary } = require('./lib/layout-library');
 
@@ -69,6 +69,8 @@ app.patch('/api/tasks/:id', (req, res) => {
 
 app.get('/api/activity', (req, res) => res.json(receipt('list_activity', store.snapshot().events)));
 app.post('/api/activity', (req, res) => res.status(201).json(receipt('create_activity', store.addEvent(req.body))));
+app.get('/api/agent/instructions', (req, res) => res.json(receipt('get_agent_instructions', { instructions: AGENT_INSTRUCTIONS, endpoint: '/api/agent/calls' })));
+app.post('/api/agent/calls', asyncRoute(async (req, res) => res.status(201).json(receipt('observe_agent_call', await mcp.callTool('cosmise_app_observe_call', req.body)))));
 app.delete('/api/activity', (req, res) => {
   if (req.query.confirm !== 'true') return res.status(400).json({ ok: false, error: 'confirm=true is required' });
   return res.json(receipt('clear_activity', store.clearActivity()));
