@@ -64,7 +64,7 @@ test('MCP lists local communication tools only', async () => {
 });
 
 test('local MCP updates tasks, activity, verification, and reports', async () => {
-  const start = await json('/mcp', { method: 'POST', body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'cosmise_app_start_task', arguments: { id: 'test-task', title: 'Build test report', progress: { current: 1, total: 3 } } } }) });
+  const start = await json('/mcp', { method: 'POST', body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'cosmise_app_start_task', arguments: { id: 'test-task', title: 'Build test report', progress: { current: 1, total: 3 }, resource: { type: 'streamboard', id: 'board-test', title: 'Test report' } } } }) });
   assert.equal(start.body.result.isError, undefined);
 
   await json('/mcp', { method: 'POST', body: JSON.stringify({ jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'cosmise_app_show_verification', arguments: { task_id: 'test-task', title: 'Structure verified', verification: { ok: true, layout_ok: true } } } }) });
@@ -73,6 +73,7 @@ test('local MCP updates tasks, activity, verification, and reports', async () =>
 
   const state = (await json('/api/state')).body.data;
   assert.equal(state.tasks[0].status, 'success');
+  assert.deepEqual(state.tasks[0].resource, { type: 'streamboard', id: 'board-test', title: 'Test report' });
   assert.equal(state.reports[0].streamboard_id, 'board-test');
   assert(state.events.some((event) => event.operation === 'verification.completed'));
   assert(fs.existsSync(stateFile));
@@ -172,13 +173,26 @@ test('the removed branded demo endpoint is not exposed', async () => {
   assert.equal(response.status, 404);
 });
 
-test('dashboard is report-first, uses the supplied icon, and omits docs UI', async () => {
+test('workspace uses the supplied Streamboards shell and omits docs UI', async () => {
   const response = await fetch(base + '/');
   const html = await response.text();
   assert.equal(response.status, 200);
   assert.match(html, /Streamboard reports/);
-  assert.match(html, /Latest MCP calls/);
-  assert.match(html, /analytics-arc-stack\.svg/);
+  assert.match(html, /id="tabbar"/);
+  assert.match(html, /id="agent"/);
+  assert.match(html, /id="repbar"/);
+  assert.doesNotMatch(html, /id="mini-toggle"/);
+  assert.doesNotMatch(html, /id="mini-layer"/);
+  assert.match(html, /cosmise-mascot\.png/);
   assert(!html.includes('Architects of Skin'));
   assert(!html.includes('MCP & API docs'));
+});
+
+test('Mini-Sym exposes the supplied compact live-state surface', async () => {
+  const response = await fetch(base + '/mini-sym');
+  const html = await response.text();
+  assert.equal(response.status, 200);
+  assert.match(html, /Cosmise Streamboards · Mini-Sym/);
+  assert.match(html, /id="mini-root"/);
+  assert.match(html, /mini-sym\.js/);
 });
