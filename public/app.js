@@ -52,13 +52,14 @@ function buildEntries() {
     if (!key) continue;
     const item = sidebar.get(key) || {};
     const sidebarStatus = item.status === 'running' ? 'build' : item.status === 'queued' || item.status === 'waiting' ? 'queued' : item.status === 'failed' ? 'failed' : 'ready';
+    const relatedTask = item.task_id ? tasks.find((task) => task.id === item.task_id) || null : null;
     entries.set(key, {
       key,
       title: item.title || report.title || 'Streamboard',
       status: sidebarStatus,
       meta: item.subtitle || report.description || report.organisation || 'Streamboard report',
       report,
-      task: item.task_id ? tasks.find((task) => task.id === item.task_id) || null : null
+      task: relatedTask && ['running', 'queued', 'waiting', 'failed'].includes(relatedTask.status) ? relatedTask : null
     });
   }
   for (const task of tasks) {
@@ -283,6 +284,11 @@ function renderContent(entry, force = false) {
     return;
   }
   const task = entry.task || {};
+  if (entry.report && !['running', 'queued', 'waiting', 'failed'].includes(task.status)) {
+    const headline = entry.report.is_public === false ? 'This Streamboard isn’t published' : 'Streamboard preview unavailable';
+    content.innerHTML = `<div class="welcome"><div class="m"><img src="/assets/cosmise-mascot.png" alt="Cosmise"></div><h2>${headline}</h2><p>${escapeHtml(entry.title)} doesn’t currently have a verified public link. Publish it in Cosmise to view it here.</p></div>`;
+    return;
+  }
   const value = progress(task);
   const failed = entry.status === 'failed';
   const queued = entry.status === 'queued';
