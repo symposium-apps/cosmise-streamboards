@@ -21,7 +21,7 @@
       {
         "name": "COSMISE_MCP_TOKEN",
         "required": false,
-        "description": "Backend-only organisation-scoped Cosmise MCP credential. The app also discovers the connected profile's protected Gateway environment at runtime."
+        "description": "Backend-only organisation-scoped Cosmise MCP credential. When absent, the app starts in a connection gate so it can explain the exact safe setup flow."
       }
     ]
   },

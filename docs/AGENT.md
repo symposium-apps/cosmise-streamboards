@@ -6,15 +6,16 @@ This app is the trusted backend and visible communications surface for organisat
 
 ## Required entry point and production credential
 
-Before Streamboards work, call local `cosmise_app_get_bootstrap`, then `cosmise_app_get_state`. The hard credential gate passes only when `runtime.backend_mcp_configured` is exactly `true`. Do not create a task or call any `streamboards_*` tool before that gate passes.
+Before Streamboards work, call `cosmise_app_get_bootstrap`, then `cosmise_app_get_state`. Treat `runtime.backend_mcp_configured=false` as a hard gate: stop all production calls until the exact recovery sequence below succeeds.
 
-The backend uses `COSMISE_MCP_TOKEN` to call `https://cosmise.com/api/mcp`. It reads the process environment first, then the active profile's protected `/srv/symposium-data/profile-runtime/<profile>/hermes-app-secrets.env`. Prefer the profile-scoped Cosmise integration so SYM-Node manages that private value. If production tools are absent:
+The backend uses `COSMISE_MCP_TOKEN` to call `https://cosmise.com/api/mcp` and reads it only from this app's process environment. It does not fall back to the profile Gateway secret file. If production tools are absent:
 
-1. Stop production work; do not use stale reports as proof of access.
-2. Tell the operator to open Symposium **Connections** for this profile and connect/synchronize Cosmise for the required organisation. Never request or repeat the credential value.
-3. After synchronization succeeds, call `run_app` with `app_id: "cosmise-streamboards"` and `action: "restart"` so the backend reloads the protected profile environment.
-4. Call `cosmise_app_get_state` again and require `runtime.backend_mcp_configured: true`.
-5. Call `cosmise_app_sync_now`, then local `streamboards_get_context`, and verify the credential-derived organisation before writing.
+1. Call `cosmise_app_update_connection` with `state: "missing_key"`.
+2. Tell the operator exactly: **Open Connections, select Cosmise, and synchronize this organisation.** Never request or repeat the credential value.
+3. From this app repository run `SYM_PROFILE_ID=<active-profile-id> node scripts/bind-profile-credential.js`. The helper copies only `COSMISE_MCP_TOKEN` into the app-specific private secret file and never prints it.
+4. Restart `cosmise-streamboards` with the profile-scoped `run_app` tool so the managed process receives the app secret.
+5. Call `cosmise_app_sync_now`, then `streamboards_get_context` through this wrapper.
+6. Proceed only when `runtime.backend_mcp_configured=true`, `connection.state=ready`, and the returned organisation matches the active profile.
 
 Do not continue production work until the key-scoped organisation and available tools have been verified.
 
@@ -32,23 +33,23 @@ Do not continue production work until the key-scoped organisation and available 
 
 ```text
 1. cosmise_app_get_bootstrap
-2. cosmise_app_get_state; require runtime.backend_mcp_configured=true or follow the exact missing-key flow above
-3. cosmise_app_sync_now
-4. streamboards_get_context; verify the credential-derived organisation
-5. cosmise_app_start_task
-6. streamboards_get_capabilities
-7. streamboards_list_connections
-8. streamboards_list_query_catalog
-9. Perform every requested `streamboards_*` operation through this local MCP; call lifecycle activity is automatic
-10. Emit broader planning/interpretation progress with cosmise_app_update_task/show_message
+2. cosmise_app_get_state; inspect runtime.backend_mcp_configured
+3. If false, execute the exact credential recovery sequence above and stop
+4. cosmise_app_sync_now
+5. streamboards_get_context; verify the active organisation
+6. cosmise_app_start_task
+7. streamboards_get_capabilities / streamboards_list_connections / streamboards_list_query_catalog
+8. Inspect existing boards, branding, live templates and bundled layout examples
+9. Perform every production streamboards_* operation through this local wrapper
+10. Emit optional planning/interpretation milestones with local communication tools
 11. Verify stored state with the recommended read tools
 12. cosmise_app_show_verification
-13. cosmise_app_complete_task; reports and canonical URLs synchronize automatically
+13. cosmise_app_complete_task
 ```
 
 Every wrapped Streamboards call automatically emits running, success, or failure activity, updates bounded local JSON state, and reaches the browser over SSE plus two-second polling. Use `cosmise_app_observe_call` only for relevant non-wrapper work such as connected-data interpretation. Do not send implementation trivia or raw payloads.
 
-If production MCP access is unavailable, the UI deliberately hides stale report navigation and shows the connection gate. Follow the missing-key flow exactly and stop before production operations. Never send the key, key prefix, authorization header, or raw connection configuration to this app.
+If production MCP access is unavailable, immediately call `cosmise_app_update_connection` with `state: "missing_key"` and an actionable message, leave the report task in `waiting`, and stop before attempting production operations. Never send the key, key prefix, authorization header, or raw connection configuration to this app.
 
 ## Local communication tools
 

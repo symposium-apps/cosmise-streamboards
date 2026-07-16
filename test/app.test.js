@@ -83,9 +83,10 @@ test('bootstrap is the complete coding-agent entry point', async () => {
   const bootstrap = response.body.data;
   assert.equal(bootstrap.api_boundaries.production.url, 'https://cosmise.com/api/mcp');
   assert.equal(bootstrap.api_boundaries.local.mcp_path, '/mcp');
-  assert.equal(bootstrap.credential_setup.profile_env_path, '/srv/symposium-data/profile-runtime/<profile>/hermes-app-secrets.env');
+  assert.equal(bootstrap.credential_setup.app_secret_path, '/srv/symposium-data/profile-runtime/<profile>/apps/cosmise-streamboards/secrets.env');
+  assert.match(bootstrap.credential_setup.binding_helper, /bind-profile-credential\.js/);
   assert.equal(bootstrap.credential_setup.environment_variable, 'COSMISE_MCP_TOKEN');
-  assert(bootstrap.credential_setup.missing_access_steps.some((step) => /profile-scoped Cosmise integration/i.test(step)));
+  assert(bootstrap.credential_setup.missing_access_steps.some((step) => /Open Connections/i.test(step)));
   assert(bootstrap.required_workflow.some((step) => step.includes('cosmise_app_start_task')));
   assert.equal(bootstrap.layouts.grid_columns, 48);
   assert.match(bootstrap.metrics.source_of_truth, /streamboards_list_query_catalog/);

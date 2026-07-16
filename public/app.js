@@ -97,8 +97,23 @@ function activeTask() {
   return (ui.state?.tasks || []).find((task) => ['running', 'queued', 'waiting'].includes(task.status)) || null;
 }
 
-function backendMcpConfigured() {
-  return ui.state?.runtime?.backend_mcp_configured === true;
+function backendCredentialMissing() {
+  return ui.state?.runtime?.backend_mcp_configured !== true;
+}
+
+function renderCredentialGate() {
+  const content = $('#content');
+  ui.entries = [];
+  ui.open = [];
+  ui.active = null;
+  ui.contentSignature = 'credential-gate';
+  renderRail();
+  renderTabs();
+  $('#agent').hidden = true;
+  $('#agent').innerHTML = '';
+  $('#repbar').hidden = true;
+  $('#repbar').innerHTML = '';
+  content.innerHTML = `<div class="empty"><div class="m"><img src="/assets/cosmise-mascot.png" alt="Cosmise"></div><h2>Connect Cosmise to continue</h2><p>This app backend does not have <code>COSMISE_MCP_TOKEN</code> in its own environment.</p><div class="log"><div class="l"><span class="c">1</span><span><b>Connect Cosmise</b> Open Connections, select Cosmise, and synchronize this organisation.</span></div><div class="l"><span class="c">2</span><span><b>Bind the app secret</b> From this app repository run <code>SYM_PROFILE_ID=&lt;active-profile-id&gt; node scripts/bind-profile-credential.js</code>.</span></div><div class="l"><span class="c">3</span><span><b>Restart Streamboards</b> Use the profile-scoped app controls so the backend receives its private environment.</span></div><div class="l"><span class="c">4</span><span><b>Verify access</b> The coding agent must call cosmise_app_sync_now, then streamboards_get_context through this app.</span></div></div><div class="st failed"><span class="d"></span>Backend MCP credential missing</div></div>`;
 }
 
 function reconcileTabs() {
@@ -151,11 +166,6 @@ function observationDetail(event, fallback, includeLearned = false) {
 function renderAgent() {
   const task = activeTask();
   const element = $('#agent');
-  if (!backendMcpConfigured()) {
-    element.hidden = true;
-    element.innerHTML = '';
-    return;
-  }
   if (task) {
     element.hidden = false;
     const value = progress(task);
@@ -196,7 +206,6 @@ function buildLog(task) {
 }
 
 function contentSignature(entry) {
-  if (!backendMcpConfigured()) return `credential-gate:${ui.state?.updated_at || ''}`;
   if (!entry) return 'welcome';
   if (entry.status === 'ready') return `ready:${entry.key}:${entry.report?.url}:${entry.report?.updated_at}`;
   const event = (ui.state?.events || []).find((item) => item.task_id === entry.task?.id);
@@ -209,10 +218,6 @@ function renderContent(entry, force = false) {
   if (!force && ui.contentSignature === signature) return;
   ui.contentSignature = signature;
   const content = $('#content');
-  if (!backendMcpConfigured()) {
-    content.innerHTML = '<div class="empty"><div class="m"><img src="/assets/cosmise-mascot.png" alt="Cosmise"></div><h2>Connect Cosmise to continue</h2><p>This app backend does not have the profile-scoped Cosmise MCP credential yet.</p><div class="log"><div class="l"><span class="c">1</span><span><b>Open Connections</b> in Symposium for this profile.</span></div><div class="l"><span class="c">2</span><span><b>Connect and synchronize Cosmise</b> for the organisation.</span></div><div class="l"><span class="c">3</span><span><b>Restart Cosmise Streamboards</b> so its backend reloads the protected profile environment.</span></div></div><div class="st queued"><span class="d"></span>Backend MCP key missing</div><p>The credential stays on the server. Never paste it into the browser, chat, source, or local JSON state.</p></div>';
-    return;
-  }
   if (!entry) {
     const connection = ui.state?.connection || {};
     const runtime = ui.state?.runtime || {};
@@ -241,7 +246,11 @@ function renderContent(entry, force = false) {
 }
 
 function render(forceContent = false) {
-  ui.entries = backendMcpConfigured() ? buildEntries() : [];
+  if (backendCredentialMissing()) {
+    renderCredentialGate();
+    return;
+  }
+  ui.entries = buildEntries();
   reconcileTabs();
   const entry = activeEntry();
   renderRail();

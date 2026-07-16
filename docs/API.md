@@ -41,6 +41,8 @@ Returns app status, the `backend_only` credential boundary, a safe configured bo
 ### `GET /api/state`
 Returns the complete browser-safe state: profile ID, connection status, backend readiness, safe server file inventory, tasks, at most 100 activity events, and at most 100 synchronized reports.
 
+When `data.runtime.backend_mcp_configured` is false, the browser renders only the Cosmise connection gate. The backend reads `COSMISE_MCP_TOKEN` only from the managed app's own process environment. The safe recovery flow is: synchronize Cosmise, run `SYM_PROFILE_ID=<active-profile-id> node scripts/bind-profile-credential.js`, restart the app, call `cosmise_app_sync_now`, and verify `streamboards_get_context`.
+
 ### `GET /api/status`
 Returns only connection status.
 
