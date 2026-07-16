@@ -183,10 +183,18 @@ function friendlyOperation(value) {
   return operation.replace(/^streamboards_/, '').replaceAll('_', ' ').replaceAll('.', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
+function friendlyStatusMessage(event, fallback = 'Updating your report.') {
+  if (!event) return fallback;
+  const operation = friendlyOperation(event.operation);
+  const detail = String(event.detail || event.title || '').trim();
+  if (!detail || detail.includes(event.operation)) return event.status === 'success' ? `${operation} complete` : operation;
+  return detail.replace(/^streamboards_/i, '').replaceAll('_', ' ').replace(/ completed successfully\.?$/i, ' complete');
+}
+
 function observationDetail(event, fallback, includeLearned = false) {
   if (!event) return fallback;
   const learned = includeLearned && Array.isArray(event.learned) ? event.learned.filter(Boolean).slice(0, 2) : [];
-  return [event.detail || event.title, learned.length ? learned.join(' · ') : ''].filter(Boolean).join(' — ');
+  return [friendlyStatusMessage(event, fallback), learned.length ? learned.join(' · ') : ''].filter(Boolean).join(' — ');
 }
 
 function renderAgent() {
@@ -206,7 +214,7 @@ function renderAgent() {
   if (latest) {
     element.hidden = false;
     element.className = `agent ${latest.status === 'failed' ? 'failed' : ''}`;
-    element.innerHTML = `<span class="dot"></span><div class="msg"><b>Latest status</b> · ${escapeHtml(latest.detail || latest.title || latest.operation)}</div><span class="pill">${escapeHtml(timeAgo(latest.updated_at || latest.created_at))}</span>`;
+    element.innerHTML = `<span class="dot"></span><div class="msg"><b>Latest update</b> · ${escapeHtml(friendlyStatusMessage(latest))}</div><span class="pill">${escapeHtml(timeAgo(latest.updated_at || latest.created_at))}</span>`;
   } else {
     element.hidden = true;
     element.innerHTML = '';
@@ -234,7 +242,7 @@ function renderAgentToast() {
     return;
   }
   const operation = task ? taskOperation(task) : latest;
-  const message = operation?.detail || operation?.title || task?.detail || task?.title || latest?.operation || 'Agent status updated.';
+  const message = operation ? friendlyStatusMessage(operation, task?.detail) : task?.detail || friendlyStatusMessage(latest);
   const status = operation?.status || task?.status || latest?.status || 'info';
   const toastStatus = task ? (task.status === 'waiting' || task.status === 'queued' ? 'queued' : 'running') : status;
   const timestamp = operation?.updated_at || operation?.created_at || task?.updated_at || latest?.updated_at || latest?.created_at;
