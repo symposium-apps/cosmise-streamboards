@@ -11,14 +11,33 @@
     "shutdown_timeout_seconds": 10
   },
   "configuration": {
-    "environment": [],
-    "secrets": []
+    "environment": [
+      {
+        "name": "COSMISE_MCP_URL",
+        "description": "Production Cosmise MCP endpoint used by the private backend wrapper.",
+        "required": false,
+        "default": "https://cosmise.com/api/mcp"
+      },
+      {
+        "name": "COSMISE_REPORT_SYNC_MS",
+        "description": "Background report metadata synchronization interval in milliseconds.",
+        "required": false,
+        "default": "60000"
+      }
+    ],
+    "secrets": [
+      {
+        "name": "COSMISE_MCP_TOKEN",
+        "description": "Organization-scoped Cosmise MCP credential available only to the app backend. SYM-Node may materialize it directly or the backend imports the same key from the owning profile's private managed environment.",
+        "required": false
+      }
+    ]
   },
   "integrations": [
     {
       "id": "cosmise",
-      "required": false,
-      "reason": "Connect the profile-scoped production Cosmise MCP used to read organisation data and manage real Streamboards. If absent, the coding agent must run the documented missing-credential workflow."
+      "required": true,
+      "reason": "Supply the organization-scoped credential to the private app backend so its single wrapped MCP can synchronize reports and instrument every Streamboards tool call."
     }
   ],
   "agent": {

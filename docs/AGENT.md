@@ -2,55 +2,44 @@
 
 ## Purpose
 
-This app is the visible communications surface for an agent operating the organisation-scoped Cosmise Streamboards MCP. Use the app's local MCP endpoint to show task progress, safe operation summaries, verification, and finished reports. Call `streamboards_*` tools through the agent profile's separate production MCP connection.
+This app exposes one private backend MCP that combines every credential-allowed production Cosmise `streamboards_*` tool with local `cosmise_app_*` communication tools. Production calls are forwarded through the backend and automatically produce sanitized realtime running/success/failure state.
 
-## Required entry point and production credential
+## Required entry point and backend credential
 
-Before Streamboards work, call local `cosmise_app_get_bootstrap` or read `GET /api/agent/bootstrap`. This structured contract explains the two API boundaries, credential recovery, local realtime lifecycle, layout examples, supported metric/formula workflow, and completion checks. Then call `cosmise_app_start_task` immediately.
+Connect to this app's wrapped `/mcp` endpoint, then call `cosmise_app_get_bootstrap`. Use the wrapped `streamboards_*` tools for all production work; do not bypass the wrapper with a separate direct Cosmise MCP connection.
 
-The production profile uses `COSMISE_MCP_TOKEN` and an `mcp_servers.cosmise` connection to `https://cosmise.com/api/mcp`. Prefer the profile-scoped Cosmise integration so SYM-Node manages that private environment value. If production tools are absent:
-
-1. Call `cosmise_app_update_connection` with `state: "missing_key"` and leave the task waiting.
-2. Ask the operator or trusted coding-agent host to connect the integration or provide the approved credential **file path**; never request or repeat the value in chat.
-3. Import it into `COSMISE_MCP_TOKEN` in `~/.hermes/profiles/<active-profile>/.env` and configure that profile's `config.yaml`, never this app or repository.
-4. Reload MCP tools or restart the coding-agent session and verify `streamboards_get_context` exists.
-
-Do not continue production work until the key-scoped organisation and available tools have been verified.
+The trusted app backend requires `COSMISE_MCP_TOKEN`. SYM-Node may inject it directly; on managed workers the backend imports only that named value from the owning profile's private environment. If the wrapper reports that access is missing or rejected, stop production work and ask the operator to connect or repair the Cosmise integration. Never request or repeat the credential value in chat.
 
 ## Security boundary
 
-1. The MCP credential determines the organisation. Never send or trust caller-selected `org_id`, `agency_id`, or `endpoint_id` as authority.
-2. The production credential belongs only to the authorised agent profile. The app must never declare, receive, read, proxy, or store it.
-3. Never print, log, return, summarize, encode, hash, or persist a production credential.
-4. Never copy credentials into browser code, reports, activity, tasks, `.sym-data`, documentation, source, or chat.
-5. Use dry-run and preview tools before destructive or broad structural changes.
-6. Never claim asynchronous cache completion from a scheduling receipt. Poll cache status.
-7. Never claim email delivery. `sent: true` proves the application completed the send call, not inbox delivery.
+1. The MCP credential determines the organization. Never send or trust caller-selected `org_id`, `agency_id`, or `endpoint_id` as authority.
+2. The production credential belongs only to the trusted app backend. The browser must never receive it.
+3. The wrapped MCP and private write APIs require a matching Bearer credential and must remain on the private profile/app control plane.
+4. Never print, log, return, summarize, encode, hash, or persist the credential.
+5. Never copy it into browser code, reports, activity, tasks, `.sym-data`, templates, documentation, source, or chat.
+6. Use dry-run and preview tools before destructive or broad structural changes.
+7. Never claim asynchronous cache completion from a scheduling receipt. Poll cache status.
+8. Never claim email delivery. `sent: true` proves the application completed the send call, not inbox delivery.
 
 ## Normal agent loop
 
 ```text
-1. cosmise_app_get_bootstrap
-2. cosmise_app_start_task
-3. Check the separate production MCP connection
-4. cosmise_app_update_connection (missing_key, checking, ready, working, or error)
-5. streamboards_get_context
-6. streamboards_get_capabilities
-7. streamboards_list_connections
-8. streamboards_list_query_catalog
-9. Before every meaningful production MCP call, call `cosmise_app_observe_call` with `status: "running"`
-10. After the production call, call `cosmise_app_observe_call` again with the same `call_id`, `status: "success"` or `"failed"`, and a safe summary of what was learned
-11. Perform requested Streamboards operations while continuing those paired observations
-12. Emit broader task progress with cosmise_app_update_task/show_message
-13. Verify stored state with the recommended read tools
-14. cosmise_app_show_verification
-15. cosmise_app_show_report when a report URL is available
-16. cosmise_app_complete_task
+1. Connect to this app's private wrapped /mcp endpoint
+2. cosmise_app_get_bootstrap
+3. streamboards_get_context / streamboards_get_capabilities
+4. streamboards_list_connections / streamboards_list_query_catalog
+5. Inspect existing boards, branding and layout templates
+6. Call the normal wrapped streamboards_* tools
+7. Let the wrapper emit automatic running/success/failure telemetry
+8. Add optional human milestones with cosmise_app_show_message
+9. Validate structure, refresh data and poll cache state to terminal
+10. Obtain canonical URLs with streamboards_get_urls
+11. cosmise_app_show_verification / cosmise_app_show_report / cosmise_app_complete_task
 ```
 
-Production MCP calls do not flow through the app automatically. The paired `cosmise_app_observe_call` calls are therefore required whenever this app has an active task. They are what make the existing **Building now** bar show what the agent is reading, learning, building, refreshing, verifying, and publishing in realtime. Do not send implementation trivia or raw payloads; send user-meaningful summaries only.
+Wrapped production calls flow through the app automatically. `cosmise_app_observe_call` remains available for additional safe human context, but basic realtime status no longer depends on paired model calls.
 
-If production MCP access is unavailable, immediately call `cosmise_app_update_connection` with `state: "missing_key"` and an actionable message, leave the report task in `waiting`, and stop before attempting production operations. Never send the key, key prefix, authorization header, or raw connection configuration to this app.
+If backend production access is unavailable, stop before production operations. Never send the key, key prefix, authorization header, or raw connection configuration into app state.
 
 ## Local communication tools
 
@@ -61,7 +50,7 @@ Read this first. It returns the complete machine-readable startup contract for p
 Read tasks, activity, connection status, and reports visible in the app.
 
 ### `cosmise_app_update_connection`
-Publish production MCP readiness to the dashboard. Valid states are `missing_key`, `checking`, `ready`, `working`, and `error`; optional modes are `read` and `read_write`. This is status reporting only—the local app must never receive or inspect the credential.
+Publish backend MCP readiness to the dashboard. Valid states are `missing_key`, `checking`, `ready`, `working`, and `error`; optional modes are `read` and `read_write`. The browser never receives or inspects the credential.
 
 ### `cosmise_app_start_task`
 Start one user-visible unit of work. Use a stable `id` when continuing the same request.
@@ -91,7 +80,7 @@ Show a meaningful milestone or warning in the realtime feed.
 Record one sanitized `streamboards_*` production call for the dashboard. Include tool name, status, concise detail, optional duration, and optional Streamboard ID. Do not include arguments, headers, credentials, upstream payloads, query results, or sensitive identifiers.
 
 ### `cosmise_app_observe_call`
-Use this companion tool around every meaningful production Cosmise MCP call while a visible task is active. It supports Streamboards and connected metric-source tools such as GA4, Google Ads, Meta Ads, Shopify, Search Console, Pinterest, TikTok, and Campaigns.
+Use this optional companion tool for additional safe human context. The wrapper already records running/success/failure around every production Streamboards call automatically.
 
 The same payload can be posted to the local HTTP endpoint `POST /api/agent/calls`. Agents can read the current instruction and endpoint from `GET /api/agent/instructions`; MCP clients also receive the instruction in the `initialize` response.
 
@@ -131,7 +120,7 @@ Allowed phases are `reading`, `learning`, `building`, `refreshing`, `verifying`,
 Display structured checks such as `organisation_scope`, `endpoint_ok`, `layout_ok`, `cache_errors`, `publication_ok`, and `stored_state`.
 
 ### `cosmise_app_show_report`
-Add a report to the report library/viewer. URLs must be HTTPS on `cosmise.com` or a subdomain. Private report access should later use a short-lived embed token.
+Add a report to the library. Only `public_url` is embedded; `edit_url` opens externally in authenticated Cosmise. Protected/private embedding requires short-lived access and must never substitute the authenticated edit page.
 
 ### `cosmise_app_clear_activity`
 Requires `confirm: true`. Never clear activity merely to hide a failure.

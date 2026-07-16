@@ -22,8 +22,9 @@ function render(state, connected = true) {
   const taskBlock = task
     ? `<div class="mstat"><div class="mt"><span>Agent</span><span class="live"><i></i>${task.status === 'running' ? 'Building' : 'Queued'}</span></div><div class="mn">${escapeHtml(task.title)}</div>${total ? `<div class="mbar"><progress max="${total}" value="${current}">${current} of ${total}</progress></div>` : ''}<div class="mstep">${total ? `${current} / ${total} widgets` : 'Agent working'} · ${escapeHtml(operation)}</div></div>`
     : '';
+  const reportUrl = report?.public_url || report?.edit_url || null;
   const reportBlock = report
-    ? `<div class="mcur"><div class="ml">Latest report</div><div class="mrn">${escapeHtml(report.title)}</div><div class="mrm">${escapeHtml(report.organisation || 'Streamboard')} · verified · ${timeAgo(report.updated_at)}</div><a class="mopen" href="${escapeHtml(report.public_url || report.url)}" target="_blank" rel="noopener noreferrer">Open report ↗</a></div>`
+    ? `<div class="mcur"><div class="ml">Latest report</div><div class="mrn">${escapeHtml(report.title)}</div><div class="mrm">${escapeHtml(report.organisation || 'Streamboard')} · ${report.public_url ? 'ready' : 'private'} · ${timeAgo(report.updated_at)}</div>${reportUrl ? `<a class="mopen" href="${escapeHtml(reportUrl)}" target="_blank" rel="noopener noreferrer">${report.public_url ? 'Open report' : 'Open in Cosmise'} ↗</a>` : ''}</div>`
     : '';
   root.innerHTML = `<div class="mcard"><div class="mbrand"><span class="mlogo"><img src="/assets/cosmise-mascot.png" alt="Cosmise"></span><div><div class="eye2">Cosmise</div><div class="nm2">Streamboards</div></div></div>${taskBlock}${reportBlock}</div>`;
 }
@@ -50,7 +51,7 @@ async function start() {
     } catch (_) {
       // EventSource reconnects automatically; polling keeps stale mini views honest.
     }
-  }, 5000);
+  }, 2000);
 }
 
 start().catch((error) => {
