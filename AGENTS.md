@@ -6,26 +6,29 @@ This repository is the trusted local Cosmise Streamboards backend and visibility
 
 1. Read `docs/AGENT.md`.
 2. Call local `cosmise_app_get_bootstrap` (or `GET /api/agent/bootstrap`).
-3. Call `cosmise_app_start_task` immediately so the existing UI shows active work.
-4. Call local `streamboards_get_context`; it proves the wrapper can reach the credential-scoped organisation.
+3. Call `cosmise_app_get_state` and inspect `runtime.backend_mcp_configured`.
+4. If it is not `true`, stop. Tell the operator to open Symposium **Connections**, connect/synchronize Cosmise for this profile, then restart `cosmise-streamboards` with `run_app(action: "restart")`.
+5. Read state again, call `cosmise_app_sync_now`, then call local `streamboards_get_context` and verify the credential-derived organisation.
+6. Only after the gate passes, call `cosmise_app_start_task` so the UI shows active work.
 
 ## Missing production access
 
-The app backend loads `COSMISE_MCP_TOKEN` from its process environment or `/srv/symposium-data/profile-runtime/<profile>/hermes-app-secrets.env`. Connect the profile's **Cosmise** integration, then restart the app backend. Never ask for, print, log, return, persist, or send the token to browser code, `.sym-data`, tasks, activity, reports, templates, documentation, or chat.
+The app backend loads `COSMISE_MCP_TOKEN` from its process environment or `/srv/symposium-data/profile-runtime/<profile>/hermes-app-secrets.env`. The missing-key UI is a hard gate: do not use stale reports or attempt production tools while it is visible. Connect the profile's **Cosmise** integration, then restart the app backend. Never ask for, print, log, return, persist, or send the token to browser code, `.sym-data`, tasks, activity, reports, templates, documentation, or chat.
 
 If production tools remain unavailable, leave the task in `waiting`, keep the UI connection state at `missing_key`, explain the required operator action, and stop before production work.
 
 ## Required build loop
 
-1. `cosmise_app_start_task`.
-2. Discover production context, capabilities, connections and query catalog through this local MCP.
-3. Inspect existing boards/branding plus both layout sources:
+1. Pass `runtime.backend_mcp_configured=true`, synchronize, and verify `streamboards_get_context`.
+2. `cosmise_app_start_task`.
+3. Discover production context, capabilities, connections and query catalog through this local MCP.
+4. Inspect existing boards/branding plus both layout sources:
    - `cosmise_app_list_layout_templates` for bundled sanitized real-report examples;
    - `streamboards_list_templates` for available live templates.
-4. Make every `streamboards_*` call through this wrapper; running/success/failure activity is automatic.
-5. Continue task progress updates while creating the board, widgets and exact 48-column layout.
-6. Validate, dry-run refresh, execute refresh, poll cache status to terminal and inspect rendered usefulness.
-7. Call `cosmise_app_show_verification`, then `cosmise_app_complete_task`. Report discovery and canonical URLs synchronize automatically.
+5. Make every `streamboards_*` call through this wrapper; running/success/failure activity is automatic.
+6. Continue task progress updates while creating the board, widgets and exact 48-column layout.
+7. Validate, dry-run refresh, execute refresh, poll cache status to terminal and inspect rendered usefulness.
+8. Call `cosmise_app_show_verification`, then `cosmise_app_complete_task`. Report discovery and canonical URLs synchronize automatically.
 
 ## Layout and metric rules
 

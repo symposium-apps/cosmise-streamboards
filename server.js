@@ -68,7 +68,7 @@ function reportUrl(value) {
 }
 
 
-app.get('/_sym/health', (req, res) => res.json({ ok: true, service: 'cosmise-streamboards', version: '0.2.0', credential_boundary: 'backend_only', backend_mcp_configured: productionClient.configured(), profile_id: store.state.profile_id }));
+app.get('/_sym/health', (req, res) => res.json({ ok: true, service: 'cosmise-streamboards', version: '0.2.1', credential_boundary: 'backend_only', backend_mcp_configured: productionClient.configured(), profile_id: store.state.profile_id }));
 app.get('/api/health', (req, res) => res.json({ ok: true, service: 'cosmise-streamboards', credential_boundary: 'backend_only', backend_mcp_configured: productionClient.configured(), production_tool_count: catalog.tool_count, local_tool_count: LOCAL_TOOLS.length }));
 app.get('/api/state', (req, res) => res.json(receipt('get_state', store.snapshot())));
 app.get('/api/status', (req, res) => res.json(receipt('get_status', store.snapshot().connection)));

@@ -32,6 +32,8 @@ The app requires the profile-scoped `cosmise` integration. Its trusted backend r
 
 The browser never receives the credential. The backend never logs, returns, hashes, or persists it in `.sym-data`. If it is missing, connect the profile's Cosmise integration and restart the app backend.
 
+When `runtime.backend_mcp_configured` is not `true`, the UI shows a hard connection gate and hides stale report navigation. The coding agent receives the same exact recovery sequence through MCP initialization and `cosmise_app_get_bootstrap`: connect/synchronize Cosmise in Symposium Connections, restart `cosmise-streamboards`, re-read state, call `cosmise_app_sync_now`, and verify `streamboards_get_context` before writing.
+
 ## Terminology and metric quality
 
 - The artifact the agent builds is a **Streamboard**.

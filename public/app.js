@@ -97,6 +97,10 @@ function activeTask() {
   return (ui.state?.tasks || []).find((task) => ['running', 'queued', 'waiting'].includes(task.status)) || null;
 }
 
+function backendMcpConfigured() {
+  return ui.state?.runtime?.backend_mcp_configured === true;
+}
+
 function reconcileTabs() {
   const keys = new Set(ui.entries.map((entry) => entry.key));
   ui.open = ui.open.filter((key) => keys.has(key));
@@ -147,6 +151,11 @@ function observationDetail(event, fallback, includeLearned = false) {
 function renderAgent() {
   const task = activeTask();
   const element = $('#agent');
+  if (!backendMcpConfigured()) {
+    element.hidden = true;
+    element.innerHTML = '';
+    return;
+  }
   if (task) {
     element.hidden = false;
     const value = progress(task);
@@ -187,6 +196,7 @@ function buildLog(task) {
 }
 
 function contentSignature(entry) {
+  if (!backendMcpConfigured()) return `credential-gate:${ui.state?.updated_at || ''}`;
   if (!entry) return 'welcome';
   if (entry.status === 'ready') return `ready:${entry.key}:${entry.report?.url}:${entry.report?.updated_at}`;
   const event = (ui.state?.events || []).find((item) => item.task_id === entry.task?.id);
@@ -199,6 +209,10 @@ function renderContent(entry, force = false) {
   if (!force && ui.contentSignature === signature) return;
   ui.contentSignature = signature;
   const content = $('#content');
+  if (!backendMcpConfigured()) {
+    content.innerHTML = '<div class="empty"><div class="m"><img src="/assets/cosmise-mascot.png" alt="Cosmise"></div><h2>Connect Cosmise to continue</h2><p>This app backend does not have the profile-scoped Cosmise MCP credential yet.</p><div class="log"><div class="l"><span class="c">1</span><span><b>Open Connections</b> in Symposium for this profile.</span></div><div class="l"><span class="c">2</span><span><b>Connect and synchronize Cosmise</b> for the organisation.</span></div><div class="l"><span class="c">3</span><span><b>Restart Cosmise Streamboards</b> so its backend reloads the protected profile environment.</span></div></div><div class="st queued"><span class="d"></span>Backend MCP key missing</div><p>The credential stays on the server. Never paste it into the browser, chat, source, or local JSON state.</p></div>';
+    return;
+  }
   if (!entry) {
     const connection = ui.state?.connection || {};
     const runtime = ui.state?.runtime || {};
@@ -227,7 +241,7 @@ function renderContent(entry, force = false) {
 }
 
 function render(forceContent = false) {
-  ui.entries = buildEntries();
+  ui.entries = backendMcpConfigured() ? buildEntries() : [];
   reconcileTabs();
   const entry = activeEntry();
   renderRail();
