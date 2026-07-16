@@ -285,8 +285,10 @@ function renderContent(entry, force = false) {
   }
   const task = entry.task || {};
   if (entry.report && !['running', 'queued', 'waiting', 'failed'].includes(task.status)) {
-    const headline = entry.report.is_public === false ? 'This Streamboard isn’t published' : 'Streamboard preview unavailable';
-    content.innerHTML = `<div class="welcome"><div class="m"><img src="/assets/cosmise-mascot.png" alt="Cosmise"></div><h2>${headline}</h2><p>${escapeHtml(entry.title)} doesn’t currently have a verified public link. Publish it in Cosmise to view it here.</p></div>`;
+    const protectedReport = entry.report.protected === true;
+    const headline = protectedReport ? 'Protected Streamboard preview unavailable' : entry.report.is_public === false ? 'This Streamboard isn’t published' : 'Streamboard preview unavailable';
+    const description = protectedReport ? 'The secure viewer could not be verified yet. This report is not being rebuilt.' : `${escapeHtml(entry.title)} doesn’t currently have a verified public link. Publish it in Cosmise to view it here.`;
+    content.innerHTML = `<div class="welcome"><div class="m"><img src="/assets/cosmise-mascot.png" alt="Cosmise"></div><h2>${headline}</h2><p>${description}</p></div>`;
     return;
   }
   const value = progress(task);
