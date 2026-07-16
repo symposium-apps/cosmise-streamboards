@@ -37,14 +37,15 @@ Do not continue production work until the key-scoped organisation and available 
 3. If false, execute the exact credential recovery sequence above and stop
 4. cosmise_app_sync_now
 5. streamboards_get_context; verify the active organisation
-6. cosmise_app_start_task
-7. streamboards_get_capabilities / streamboards_list_connections / streamboards_list_query_catalog
-8. Inspect existing boards, branding, live templates and bundled layout examples
-9. Perform every production streamboards_* operation through this local wrapper
-10. Emit optional planning/interpretation milestones with local communication tools
-11. Verify stored state with the recommended read tools
-12. cosmise_app_show_verification
-13. cosmise_app_complete_task
+6. cosmise_app_start_task with resource.type=streamboard and resource.id when the target is known
+7. cosmise_app_set_view whenever planning switches to another Streamboard
+8. streamboards_get_capabilities / streamboards_list_connections / streamboards_list_query_catalog
+9. Inspect existing boards, branding, live templates and bundled layout examples
+10. Perform every production streamboards_* operation through this local wrapper
+11. Emit optional planning/interpretation milestones with local communication tools
+12. Verify stored state with the recommended read tools
+13. cosmise_app_show_verification
+14. cosmise_app_complete_task
 ```
 
 Every wrapped Streamboards call automatically emits running, success, or failure activity, updates bounded local JSON state, and reaches the browser over SSE plus two-second polling. Use `cosmise_app_observe_call` only for relevant non-wrapper work such as connected-data interpretation. Do not send implementation trivia or raw payloads.

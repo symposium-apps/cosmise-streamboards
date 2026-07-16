@@ -11,7 +11,7 @@ const { inventoryFiles } = require('./lib/runtime-files');
 const catalog = require('./data/tool-catalog.json');
 const { listLayoutTemplates, getLayoutTemplate, library: layoutLibrary } = require('./lib/layout-library');
 
-const DATA_FILE = global.__COSMISE_TEST_DATA_FILE__ || path.join(__dirname, '.sym-data', 'state.json');
+const DATA_FILE = global.__COSMISE_TEST_DATA_FILE__ || process.env.COSMISE_STATE_FILE || path.join(__dirname, '.sym-data', 'state.json');
 const HOST = process.env.HOST || '0.0.0.0';
 const PORT = Number(process.env.PORT || 4322);
 const PROFILE_ID = process.env.SYM_PROFILE_ID || 'local';
@@ -71,6 +71,16 @@ function reportUrl(value) {
 app.get('/_sym/health', (req, res) => res.json({ ok: true, service: 'cosmise-streamboards', version: '0.2.1', credential_boundary: 'backend_only', backend_mcp_configured: productionClient.configured(), profile_id: store.state.profile_id }));
 app.get('/api/health', (req, res) => res.json({ ok: true, service: 'cosmise-streamboards', credential_boundary: 'backend_only', backend_mcp_configured: productionClient.configured(), production_tool_count: catalog.tool_count, local_tool_count: LOCAL_TOOLS.length }));
 app.get('/api/state', (req, res) => res.json(receipt('get_state', store.snapshot())));
+app.get('/api/view', (req, res) => res.json(receipt('get_view', { view: store.snapshot().view, sidebar_items: store.snapshot().sidebar_items })));
+app.patch('/api/view', (req, res) => {
+  const action = String(req.body?.action || 'select');
+  const id = String(req.body?.report_id || '').trim();
+  const known = new Set(store.snapshot().reports.map((report) => report.streamboard_id || report.id));
+  if (id && !known.has(id)) return res.status(404).json({ ok: false, error: 'Streamboard not found' });
+  if (action === 'close') return res.json(receipt('close_view', store.closeReport(id).view));
+  if (action !== 'select') return res.status(400).json({ ok: false, error: 'action must be select or close' });
+  return res.json(receipt('select_view', store.focusStreamboard(id, { status: 'selected', source: 'browser_navigation' }).view));
+});
 app.get('/api/status', (req, res) => res.json(receipt('get_status', store.snapshot().connection)));
 app.patch('/api/status', localAgentOnly, (req, res) => res.json(receipt('update_status', store.updateConnection(req.body).connection)));
 

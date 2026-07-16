@@ -29,15 +29,16 @@ If production tools remain unavailable, leave the task in `waiting`, keep the UI
 
 ## Required build loop
 
-1. `cosmise_app_start_task`.
-2. Discover production context, capabilities, connections and query catalog through this local MCP.
-3. Inspect existing boards/branding plus both layout sources:
+1. `cosmise_app_start_task`; include `resource: { "type": "streamboard", "id": "<streamboard-id>" }` whenever the target already exists.
+2. Use `cosmise_app_set_view` when switching the active Streamboard. `/api/state.view` is authoritative for selected/open tabs, and `/api/state.sidebar_items` is authoritative for each sidebar status.
+3. Discover production context, capabilities, connections and query catalog through this local MCP.
+4. Inspect existing boards/branding plus both layout sources:
    - `cosmise_app_list_layout_templates` for bundled sanitized real-report examples;
    - `streamboards_list_templates` for available live templates.
-4. Make every `streamboards_*` call through this wrapper; running/success/failure activity is automatic.
-5. Continue task progress updates while creating the board, widgets and exact 48-column layout.
-6. Validate, dry-run refresh, execute refresh, poll cache status to terminal and inspect rendered usefulness.
-7. Call `cosmise_app_show_verification`, then `cosmise_app_complete_task`. Report discovery and canonical URLs synchronize automatically.
+5. Make every `streamboards_*` call through this wrapper; running/success/failure activity is automatic.
+6. Continue task progress updates while creating the board, widgets and exact 48-column layout.
+7. Validate, dry-run refresh, execute refresh, poll cache status to terminal and inspect rendered usefulness.
+8. Call `cosmise_app_show_verification`, then `cosmise_app_complete_task`. Report discovery and canonical URLs synchronize automatically.
 
 ## Layout and metric rules
 

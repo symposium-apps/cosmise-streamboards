@@ -8,7 +8,11 @@ const ui = {
   railOpen: true,
   streamConnected: false,
   initialized: false,
-  contentSignature: null
+  contentSignature: null,
+  railSignature: null,
+  tabsSignature: null,
+  toolbarSignature: null,
+  statusToastSignature: null
 };
 const STATE_POLL_MS = 2000;
 let statePollInFlight = false;
@@ -53,17 +57,20 @@ function entryKey(value) {
 function buildEntries() {
   const reports = ui.state?.reports || [];
   const tasks = ui.state?.tasks || [];
+  const sidebar = new Map((ui.state?.sidebar_items || []).map((item) => [String(item.id), item]));
   const entries = new Map();
   for (const report of reports) {
     const key = entryKey(report.streamboard_id || report.id);
     if (!key) continue;
+    const item = sidebar.get(key) || {};
+    const sidebarStatus = item.status === 'running' ? 'build' : item.status === 'queued' || item.status === 'waiting' ? 'queued' : item.status === 'failed' ? 'failed' : 'ready';
     entries.set(key, {
       key,
-      title: report.title || 'Streamboard',
-      status: report.status === 'failed' ? 'failed' : 'ready',
-      meta: `${report.verification ? 'verified' : 'ready'} · ${timeAgo(report.updated_at)}`,
+      title: item.title || report.title || 'Streamboard',
+      status: sidebarStatus,
+      meta: item.subtitle || report.description || report.organisation || 'Streamboard report',
       report,
-      task: null
+      task: item.task_id ? tasks.find((task) => task.id === item.task_id) || null : null
     });
   }
   for (const task of tasks) {
@@ -106,28 +113,26 @@ function renderCredentialGate() {
   ui.entries = [];
   ui.open = [];
   ui.active = null;
-  ui.contentSignature = 'credential-gate';
   renderRail();
   renderTabs();
   $('#agent').hidden = true;
   $('#agent').innerHTML = '';
   $('#repbar').hidden = true;
   $('#repbar').innerHTML = '';
-  content.innerHTML = `<div class="empty"><div class="m"><img src="/assets/cosmise-mascot.png" alt="Cosmise"></div><h2>Connect Cosmise to continue</h2><p>This app backend does not have <code>COSMISE_MCP_TOKEN</code> in its own environment.</p><div class="log"><div class="l"><span class="c">1</span><span><b>Connect Cosmise</b> Open Connections, select Cosmise, and synchronize this organisation.</span></div><div class="l"><span class="c">2</span><span><b>Bind the app secret</b> From this app repository run <code>SYM_PROFILE_ID=&lt;active-profile-id&gt; node scripts/bind-profile-credential.js</code>.</span></div><div class="l"><span class="c">3</span><span><b>Restart Streamboards</b> Use the profile-scoped app controls so the backend receives its private environment.</span></div><div class="l"><span class="c">4</span><span><b>Verify access</b> The coding agent must call cosmise_app_sync_now, then streamboards_get_context through this app.</span></div></div><div class="st failed"><span class="d"></span>Backend MCP credential missing</div></div>`;
+  ui.toolbarSignature = 'credential-gate';
+  if (ui.contentSignature !== 'credential-gate') {
+    ui.contentSignature = 'credential-gate';
+    content.innerHTML = `<div class="empty"><div class="m"><img src="/assets/cosmise-mascot.png" alt="Cosmise"></div><h2>Connect Cosmise to continue</h2><p>This app backend does not have <code>COSMISE_MCP_TOKEN</code> in its own environment.</p><div class="log"><div class="l"><span class="c">1</span><span><b>Connect Cosmise</b> Open Connections, select Cosmise, and synchronize this organisation.</span></div><div class="l"><span class="c">2</span><span><b>Bind the app secret</b> From this app repository run <code>SYM_PROFILE_ID=&lt;active-profile-id&gt; node scripts/bind-profile-credential.js</code>.</span></div><div class="l"><span class="c">3</span><span><b>Restart Streamboards</b> Use the profile-scoped app controls so the backend receives its private environment.</span></div><div class="l"><span class="c">4</span><span><b>Verify access</b> The coding agent must call cosmise_app_sync_now, then streamboards_get_context through this app.</span></div></div><div class="st failed"><span class="d"></span>Backend MCP credential missing</div></div>`;
+  }
 }
 
 function reconcileTabs() {
   const keys = new Set(ui.entries.map((entry) => entry.key));
-  ui.open = ui.open.filter((key) => keys.has(key));
-  if (!ui.initialized) {
-    const first = ui.entries[0];
-    if (first) {
-      ui.open = [first.key];
-      ui.active = first.key;
-    }
-    ui.initialized = true;
-  }
-  if (ui.active && !keys.has(ui.active)) ui.active = ui.open[0] || null;
+  const view = ui.state?.view || {};
+  ui.open = (view.open_report_ids || []).filter((key) => keys.has(key));
+  ui.active = keys.has(view.active_report_id) ? view.active_report_id : ui.open[0] || null;
+  if (ui.active && !ui.open.includes(ui.active)) ui.open.unshift(ui.active);
+  ui.initialized = true;
 }
 
 function renderRail() {
@@ -137,12 +142,18 @@ function renderRail() {
     ? ui.entries.map((entry) => `<button class="ri ${entry.key === ui.active ? 'on' : ''}" type="button" data-action="open" data-id="${escapeHtml(entry.key)}" aria-current="${entry.key === ui.active ? 'page' : 'false'}"><span class="ic">${escapeHtml(initials(entry.title))}<span class="s ${entry.status}"></span></span><span class="tx"><span class="n">${escapeHtml(entry.title)}</span><span class="m">${escapeHtml(entry.meta)}</span></span></button>`).join('')
     : '';
   const footer = organisation ? `<div class="foot"><div class="u"><span class="av" aria-hidden="true"></span><div class="uu"><div class="n">${escapeHtml(organisation)}</div></div></div></div>` : '';
+  const signature = JSON.stringify([ui.railOpen, ui.active, organisation, ui.entries.map((entry) => [entry.key, entry.title, entry.status, entry.meta])]);
+  if (ui.railSignature === signature) return;
+  ui.railSignature = signature;
   $('#rail').className = `rail${ui.railOpen ? ' open' : ''}`;
   $('#rail').innerHTML = `<div class="top"><span class="logo"><img src="/assets/cosmise-mascot.png" alt="Cosmise"></span><div class="wm"><div class="eye">Cosmise</div><div class="nm">Streamboards</div></div><button class="tg" type="button" data-action="toggle-rail" title="${ui.railOpen ? 'Collapse' : 'Expand'} reports">${ui.railOpen ? ICON.chevron : ICON.menu}</button></div><div class="lbl">Reports</div><div class="list">${reports}</div>${footer}`;
 }
 
 function renderTabs() {
   const openEntries = ui.open.map((key) => ui.entries.find((entry) => entry.key === key)).filter(Boolean);
+  const signature = JSON.stringify([ui.active, openEntries.map((entry) => [entry.key, entry.title, entry.status])]);
+  if (ui.tabsSignature === signature) return;
+  ui.tabsSignature = signature;
   $('#tabbar').innerHTML = openEntries.length
     ? openEntries.map((entry) => `<div class="tab ${entry.key === ui.active ? 'on' : ''}" role="tab" aria-selected="${entry.key === ui.active}" tabindex="${entry.key === ui.active ? '0' : '-1'}" data-action="tab" data-id="${escapeHtml(entry.key)}"><span class="d ${entry.status}"></span><span class="nm">${escapeHtml(entry.title)}</span><button class="x" type="button" data-action="close" data-id="${escapeHtml(entry.key)}" aria-label="Close ${escapeHtml(entry.title)}">×</button></div>`).join('')
     : '';
@@ -187,9 +198,40 @@ function renderAgent() {
   }
 }
 
+function renderAgentToast() {
+  const element = $('#agent-toast');
+  const task = activeTask();
+  const latest = (ui.state?.events || [])[0] || null;
+  if (!task && !latest) {
+    element.hidden = true;
+    ui.statusToastSignature = null;
+    return;
+  }
+  const operation = task ? taskOperation(task) : latest;
+  const message = operation?.detail || operation?.title || task?.detail || task?.title || latest?.operation || 'Agent status updated.';
+  const status = operation?.status || task?.status || latest?.status || 'info';
+  const timestamp = operation?.updated_at || operation?.created_at || task?.updated_at || latest?.updated_at || latest?.created_at;
+  const label = task ? phaseLabel(operation, task) : status === 'failed' ? 'Needs attention' : status === 'success' ? 'Completed' : 'Latest update';
+  const signature = `${operation?.id || task?.id || 'status'}:${status}:${message}:${timestamp || ''}`;
+  if (ui.statusToastSignature === signature) {
+    const time = element.querySelector('.agent-toast-time');
+    if (time) time.textContent = timeAgo(timestamp);
+    return;
+  }
+  ui.statusToastSignature = signature;
+  element.className = `agent-toast ${status}`;
+  element.innerHTML = `<span class="agent-toast-star" aria-hidden="true">✦</span><span class="agent-toast-copy"><span class="agent-toast-label">${escapeHtml(label)}</span><span class="agent-toast-message">${escapeHtml(message)}</span></span><span class="agent-toast-time">${escapeHtml(timeAgo(timestamp))}</span>`;
+  element.hidden = false;
+  element.classList.remove('arrive');
+  requestAnimationFrame(() => element.classList.add('arrive'));
+}
+
 function renderToolbar(entry) {
   const toolbar = $('#repbar');
-  if (!entry?.report?.public_url || entry.status !== 'ready') {
+  const signature = entry?.report?.public_url ? `${entry.key}:${entry.report.public_url}` : 'hidden';
+  if (ui.toolbarSignature === signature) return;
+  ui.toolbarSignature = signature;
+  if (!entry?.report?.public_url) {
     toolbar.hidden = true;
     toolbar.innerHTML = '';
     return;
@@ -207,7 +249,7 @@ function buildLog(task) {
 
 function contentSignature(entry) {
   if (!entry) return 'welcome';
-  if (entry.status === 'ready') return `ready:${entry.key}:${entry.report?.url}:${entry.report?.updated_at}`;
+  if (entry.report?.public_url) return `report:${entry.key}:${entry.report.public_url}`;
   const event = (ui.state?.events || []).find((item) => item.task_id === entry.task?.id);
   const latest = event ? `${event.id}:${event.updated_at || event.created_at}:${event.status}:${event.detail}:${JSON.stringify(event.learned || [])}` : '';
   return `${entry.status}:${entry.key}:${entry.task?.updated_at}:${latest}`;
@@ -215,7 +257,16 @@ function contentSignature(entry) {
 
 function renderContent(entry, force = false) {
   const signature = contentSignature(entry);
-  if (!force && ui.contentSignature === signature) return;
+  const editing = entry?.status === 'build';
+  if (!force && ui.contentSignature === signature) {
+    const reportView = $('#content .report-view');
+    if (reportView) {
+      reportView.classList.toggle('editing', editing);
+      const state = reportView.querySelector('.report-state');
+      if (state) state.innerHTML = editing ? '<i></i>Editing' : '<i></i>Live';
+    }
+    return;
+  }
   ui.contentSignature = signature;
   const content = $('#content');
   if (!entry) {
@@ -226,13 +277,9 @@ function renderContent(entry, force = false) {
     content.innerHTML = `<div class="welcome"><div class="m"><img src="/assets/cosmise-mascot.png" alt="Cosmise"></div><h2>Tell an agent to create a Cosmise Streamboard</h2><p>${escapeHtml(status)}</p>${buildLog(null)}</div>`;
     return;
   }
-  if (entry.status === 'ready' && entry.report) {
+  if (entry.report?.public_url) {
     const frameUrl = entry.report.public_url;
-    if (!frameUrl) {
-      content.innerHTML = `<div class="empty"><div class="m"><img src="/assets/cosmise-mascot.png" alt=""></div><h2>${escapeHtml(entry.title)}</h2><p>This Streamboard exists, but Cosmise has not returned a public URL. The private edit page is never embedded because it requires a signed-in Cosmise session.</p>${buildLog(null)}</div>`;
-      return;
-    }
-    content.innerHTML = `<article class="report-view"><header class="report-mast"><div><div class="report-title">${escapeHtml(entry.title)}</div><div class="report-sub">${escapeHtml(entry.report.organisation || entry.report.public_url || frameUrl)}</div></div><span class="live"><i></i>Live</span></header><div class="frame-wrap"><div class="frame-loading"><i></i>Loading Streamboard</div><iframe id="report-frame" src="${escapeHtml(frameUrl)}" title="${escapeHtml(entry.title)}" referrerpolicy="no-referrer"></iframe></div></article>`;
+    content.innerHTML = `<article class="report-view${editing ? ' editing' : ''}"><header class="report-mast"><div><div class="report-title">${escapeHtml(entry.title)}</div><div class="report-sub">${escapeHtml(entry.report.organisation || entry.report.public_url || frameUrl)}</div></div><span class="live report-state"><i></i>${editing ? 'Editing' : 'Live'}</span></header><div class="frame-wrap"><div class="frame-loading"><i></i>Loading Streamboard</div><iframe id="report-frame" src="${escapeHtml(frameUrl)}" title="${escapeHtml(entry.title)}" referrerpolicy="no-referrer"></iframe><div class="edit-shimmer" aria-hidden="true"></div></div></article>`;
     $('#report-frame').addEventListener('load', () => $('.frame-wrap')?.classList.add('loaded'), { once: true });
     return;
   }
@@ -242,10 +289,11 @@ function renderContent(entry, force = false) {
   const liveDetail = observationDetail(operation, task.detail || 'Composing your Streamboard…');
   const failed = entry.status === 'failed';
   const queued = entry.status === 'queued';
-  content.innerHTML = `<div class="empty"><div class="m"><img src="/assets/cosmise-mascot.png" alt="">${queued || failed ? '' : '<span class="spin"></span>'}</div><h2>${failed ? 'Report build needs attention' : 'Report not built yet'}</h2><p>${failed ? escapeHtml(task.detail || 'The coding agent could not complete this Streamboard.') : queued ? 'This Streamboard is queued. The coding agent will start composing it shortly.' : 'The coding agent is composing this Streamboard right now. It’ll render here the moment every widget is verified.'}</p><div class="st ${entry.status}"><span class="d"></span>${failed ? 'Build failed' : queued ? 'Queued' : `Building now · ${escapeHtml(liveDetail)}${value.total ? ` · ${value.current} / ${value.total} widgets` : ''}`}</div>${!failed && !queued && value.total ? `<div class="pbar"><progress max="${value.total}" value="${value.current}">${value.percent}%</progress></div>` : ''}${buildLog(task)}</div>`;
+  content.innerHTML = `<div class="empty"><div class="m"><img src="/assets/cosmise-mascot.png" alt="">${queued || failed ? '' : '<span class="spin"></span>'}</div><h2>${failed ? 'Report build needs attention' : 'Report not built yet'}</h2><p>${failed ? escapeHtml(task.detail || 'The coding agent could not complete this Streamboard.') : queued ? 'This Streamboard is queued. The coding agent will start composing it shortly.' : 'The coding agent is composing this Streamboard right now. It’ll render here the moment every widget is verified.'}</p><div class="st ${entry.status}"><span class="d"></span><span class="st-text">${failed ? 'Build failed' : queued ? 'Queued' : `Building now · ${escapeHtml(liveDetail)}${value.total ? ` · ${value.current} / ${value.total} widgets` : ''}`}</span></div>${!failed && !queued && value.total ? `<div class="pbar"><progress max="${value.total}" value="${value.current}">${value.percent}%</progress></div>` : ''}${buildLog(task)}</div>`;
 }
 
 function render(forceContent = false) {
+  renderAgentToast();
   if (backendCredentialMissing()) {
     renderCredentialGate();
     return;
@@ -260,21 +308,26 @@ function render(forceContent = false) {
   renderContent(entry, forceContent);
 }
 
-function openEntry(id) {
-  if (!ui.entries.some((entry) => entry.key === id)) return;
-  if (!ui.open.includes(id)) ui.open.push(id);
-  ui.active = id;
-  ui.contentSignature = null;
-  render();
+async function updateView(action, id) {
+  const response = await fetch('/api/view', {
+    method: 'PATCH',
+    headers: { accept: 'application/json', 'content-type': 'application/json' },
+    body: JSON.stringify({ action, report_id: id })
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.error || `View update failed (${response.status})`);
+  await load(true);
 }
 
-function closeEntry(id) {
-  const index = ui.open.indexOf(id);
-  if (index < 0) return;
-  ui.open.splice(index, 1);
-  if (ui.active === id) ui.active = ui.open[Math.max(0, index - 1)] || ui.open[0] || null;
-  ui.contentSignature = null;
-  render();
+async function openEntry(id) {
+  if (!ui.entries.some((entry) => entry.key === id)) return;
+  if (ui.active === id && ui.open.includes(id)) return;
+  await updateView('select', id);
+}
+
+async function closeEntry(id) {
+  if (!ui.open.includes(id)) return;
+  await updateView('close', id);
 }
 
 function currentUrl() {
@@ -352,8 +405,8 @@ document.addEventListener('click', async (event) => {
   const id = target.dataset.id;
   try {
     if (action === 'toggle-rail') { ui.railOpen = !ui.railOpen; renderRail(); }
-    else if (action === 'open' || action === 'tab') openEntry(id);
-    else if (action === 'close') { event.stopPropagation(); closeEntry(id); }
+    else if (action === 'open' || action === 'tab') await openEntry(id);
+    else if (action === 'close') { event.stopPropagation(); await closeEntry(id); }
     else if (action === 'copy') await copyReport(target);
     else if (action === 'refresh') renderContent(activeEntry(), true);
     else if (action === 'external') { const url = currentUrl(); if (url) window.open(url, '_blank', 'noopener,noreferrer'); }
@@ -366,7 +419,7 @@ document.addEventListener('keydown', (event) => {
   if ((event.key === 'ArrowLeft' || event.key === 'ArrowRight') && event.target.closest('[role="tab"]') && ui.open.length > 1) {
     const index = ui.open.indexOf(ui.active);
     const delta = event.key === 'ArrowRight' ? 1 : -1;
-    openEntry(ui.open[(index + delta + ui.open.length) % ui.open.length]);
+    openEntry(ui.open[(index + delta + ui.open.length) % ui.open.length]).catch((error) => toast(error.message));
     document.querySelector('[role="tab"][aria-selected="true"]')?.focus();
   }
 });
