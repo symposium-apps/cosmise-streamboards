@@ -40,6 +40,17 @@ async function start() {
     render(state, true);
   });
   source.onerror = () => render(state, false);
+  setInterval(async () => {
+    if (source.readyState === EventSource.OPEN) return;
+    try {
+      const next = await fetch('/api/state', { headers: { accept: 'application/json' } });
+      if (!next.ok) return;
+      state = (await next.json()).data;
+      render(state, false);
+    } catch (_) {
+      // EventSource reconnects automatically; polling keeps stale mini views honest.
+    }
+  }, 5000);
 }
 
 start().catch((error) => {

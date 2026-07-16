@@ -11,8 +11,10 @@ const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'cosmise-streamboards-te
 const stateFile = path.join(temporary, 'state.json');
 global.__COSMISE_TEST_DATA_FILE__ = stateFile;
 process.env.PORT = '54321';
+process.env.SYM_PROFILE_ID = 'profile-test';
 
 const { app, store, runtimePort } = require('../server');
+const { AppStore } = require('../lib/store');
 let server;
 let base;
 
@@ -27,10 +29,19 @@ test.after(async () => {
   fs.rmSync(temporary, { recursive: true, force: true });
   delete global.__COSMISE_TEST_DATA_FILE__;
   delete process.env.PORT;
+  delete process.env.SYM_PROFILE_ID;
 });
 
 test('runtime obeys the port allocated by SYM-node', () => {
   assert.equal(runtimePort, 54321);
+  assert.equal(store.snapshot().profile_id, 'profile-test');
+});
+
+test('runtime profile identity overrides stale persisted local identity', () => {
+  const file = path.join(temporary, 'stale-profile.json');
+  fs.writeFileSync(file, JSON.stringify({ schema_version: 2, profile_id: 'local', tasks: [], events: [], reports: [] }));
+  const scopedStore = new AppStore({ file, profileId: 'profile-current' });
+  assert.equal(scopedStore.snapshot().profile_id, 'profile-current');
 });
 
 async function json(url, options = {}) {
@@ -43,28 +54,51 @@ test('health and docs expose the agent-only credential boundary', async () => {
   assert.equal(health.status, 200);
   assert.equal(health.body.credential_boundary, 'agent_only');
   assert.equal(health.body.production_tool_count, 78);
-  assert.equal(health.body.local_tool_count, 13);
+  assert.equal(health.body.local_tool_count, 14);
 
   const docs = await json('/api/docs/tools');
   assert.equal(docs.body.tool_count, 78);
   assert.equal(docs.body.tools.length, 78);
-  assert.equal(docs.body.local_tools.length, 13);
+  assert.equal(docs.body.local_tools.length, 14);
 });
 
-test('MCP initialization tells the agent to mirror production calls', async () => {
+test('MCP initialization teaches the complete production and local workflow', async () => {
   const response = await json('/mcp', { method: 'POST', body: JSON.stringify({ jsonrpc: '2.0', id: 0, method: 'initialize', params: { protocolVersion: '2025-03-26', capabilities: {}, clientInfo: { name: 'test', version: '1' } } }) });
   assert.equal(response.status, 200);
   assert.match(response.body.result.instructions, /cosmise_app_observe_call/);
+  assert.match(response.body.result.instructions, /cosmise_app_get_bootstrap/);
+  assert.match(response.body.result.instructions, /COSMISE_MCP_TOKEN/);
+  assert.match(response.body.result.instructions, /streamboards_list_query_catalog/);
+  assert.match(response.body.result.instructions, /cosmise_app_list_layout_templates/);
+  assert.match(response.body.result.instructions, /formula tokens/i);
   assert.match(response.body.result.instructions, /before the production call/i);
   assert.match(response.body.result.instructions, /same call_id/i);
   assert.match(response.body.result.instructions, /never send credentials/i);
+  assert.match(response.body.result.instructions, /layout/i);
+  assert.match(response.body.result.instructions, /query_catalog/i);
+});
+
+test('bootstrap is the complete coding-agent entry point', async () => {
+  const response = await json('/api/agent/bootstrap');
+  assert.equal(response.status, 200);
+  const bootstrap = response.body.data;
+  assert.equal(bootstrap.api_boundaries.production.url, 'https://cosmise.com/api/mcp');
+  assert.equal(bootstrap.api_boundaries.local.mcp_path, '/mcp');
+  assert.equal(bootstrap.credential_setup.profile_env_path, '~/.hermes/profiles/<active-profile>/.env');
+  assert.equal(bootstrap.credential_setup.environment_variable, 'COSMISE_MCP_TOKEN');
+  assert(bootstrap.credential_setup.missing_access_steps.some((step) => /credential file path/i.test(step)));
+  assert(bootstrap.required_workflow.some((step) => step.includes('cosmise_app_start_task')));
+  assert.equal(bootstrap.layouts.grid_columns, 48);
+  assert.match(bootstrap.metrics.source_of_truth, /streamboards_list_query_catalog/);
+  assert(!JSON.stringify(bootstrap).includes('csk_'));
 });
 
 test('MCP lists local communication tools only', async () => {
   const response = await json('/mcp', { method: 'POST', body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} }) });
   assert.equal(response.status, 200);
-  assert.equal(response.body.result.tools.length, 13);
+  assert.equal(response.body.result.tools.length, 14);
   const names = new Set(response.body.result.tools.map((tool) => tool.name));
+  assert(names.has('cosmise_app_get_bootstrap'));
   assert(names.has('cosmise_app_update_connection'));
   assert(names.has('cosmise_app_log_call'));
   assert(names.has('cosmise_app_observe_call'));
@@ -268,4 +302,13 @@ test('Mini-Sym exposes the supplied compact live-state surface', async () => {
   assert.match(html, /Cosmise Streamboards · Mini-Sym/);
   assert.match(html, /id="mini-root"/);
   assert.match(html, /mini-sym\.js/);
+});
+
+test('browser clients reconcile local state when SSE is interrupted', async () => {
+  const desktop = await (await fetch(base + '/app.js')).text();
+  const mini = await (await fetch(base + '/mini-sym.js')).text();
+  assert.match(desktop, /STATE_POLL_MS = 5000/);
+  assert.match(desktop, /startStatePolling/);
+  assert.match(mini, /source\.readyState === EventSource\.OPEN/);
+  assert.match(mini, /fetch\('\/api\/state'/);
 });

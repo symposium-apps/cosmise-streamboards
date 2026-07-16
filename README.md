@@ -8,10 +8,11 @@ A local-first Symposium app that makes agent-driven Streamboards work visible.
 - provides a local JSON-RPC MCP endpoint with app communication tools for Hermes;
 - keeps production Streamboards credentials and calls inside the authorised agent profile;
 - turns sanitized agent updates into realtime activity;
-- tells connected agents through MCP initialization instructions to mirror meaningful production calls into the live **Building now** status;
+- gives connected agents one machine-readable bootstrap covering production credential setup, both APIs, layouts, metrics, formulas, realtime state and verification;
+- tells connected agents through MCP initialization instructions to run the complete build lifecycle and mirror meaningful production calls into the live **Building now** status;
 - gives the coding agent local communication tools for connection readiness, call receipts, tasks, messages, verification, reports, and layout-template selection;
 - ships versioned sanitized layout examples as app files;
-- streams UI updates over Server-Sent Events;
+- streams UI updates over Server-Sent Events and polls local state every five seconds as a resilience fallback;
 - persists local activity under `.sym-data/`;
 - displays canonical Cosmise report URLs without receiving a production MCP credential.
 
@@ -27,9 +28,9 @@ The server prints local and LAN URLs. SYM-Node supplies its managed host/port at
 
 ## Configuration
 
-The app has no environment or secret configuration. It does not accept, read, store, or proxy a production MCP credential.
+The app has no environment or secret configuration. It does not accept, read, store, or proxy a production MCP credential. Its manifest requests the profile-scoped `cosmise` integration.
 
-The authorised agent profile owns its production Streamboards MCP connection. The agent sends only sanitized task updates, operation summaries, verification, and report URLs to this app. Never put a real credential in this repository, app process, browser code, status payload, activity event, report object, template file, or documentation.
+The authorised agent profile owns its production Streamboards MCP connection at `https://cosmise.com/api/mcp`. The preferred setup stores `COSMISE_MCP_TOKEN` in the private profile gateway environment. If it is missing, the bootstrap tells the coding agent to report `missing_key`, ask for an approved credential file path or connected integration, and configure the active profile without sending the value to this app. Never put a real credential in this repository, app process, browser code, status payload, activity event, report object, template file, or documentation.
 
 ## Terminology and metric quality
 
@@ -88,6 +89,7 @@ Forbidden template data:
 - `PATCH /api/tasks/:id`
 - `GET/POST/DELETE /api/activity`
 - `GET /api/agent/instructions`
+- `GET /api/agent/bootstrap`
 - `POST /api/agent/calls`
 - `GET/POST /api/reports`
 - `GET /api/docs/tools`
@@ -102,7 +104,7 @@ Forbidden template data:
 POST /mcp
 ```
 
-Supports MCP JSON-RPC `initialize`, `ping`, `tools/list`, and `tools/call`. It exposes 13 local app communication tools. The MCP initialize response includes the live-observation instruction, and `cosmise_app_observe_call` accepts paired before/after updates that drive the existing **Building now** bar through SSE. The 78 production Streamboards tools remain on the agent's separate production MCP connection; this app receives only sanitized telemetry, never credentials or raw API payloads.
+Supports MCP JSON-RPC `initialize`, `ping`, `tools/list`, and `tools/call`. It exposes 14 local app communication tools. `cosmise_app_get_bootstrap` is the required entry point and the MCP initialize response includes the complete operating contract. `cosmise_app_observe_call` accepts paired before/after updates that drive the existing **Building now** bar through SSE and polling fallback. The 78 production Streamboards tools remain on the agent's separate production MCP connection; this app receives only sanitized telemetry, never credentials or raw API payloads.
 
 ## Verification
 

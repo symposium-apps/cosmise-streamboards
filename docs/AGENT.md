@@ -4,6 +4,19 @@
 
 This app is the visible communications surface for an agent operating the organisation-scoped Cosmise Streamboards MCP. Use the app's local MCP endpoint to show task progress, safe operation summaries, verification, and finished reports. Call `streamboards_*` tools through the agent profile's separate production MCP connection.
 
+## Required entry point and production credential
+
+Before Streamboards work, call local `cosmise_app_get_bootstrap` or read `GET /api/agent/bootstrap`. This structured contract explains the two API boundaries, credential recovery, local realtime lifecycle, layout examples, supported metric/formula workflow, and completion checks. Then call `cosmise_app_start_task` immediately.
+
+The production profile uses `COSMISE_MCP_TOKEN` and an `mcp_servers.cosmise` connection to `https://cosmise.com/api/mcp`. Prefer the profile-scoped Cosmise integration so SYM-Node manages that private environment value. If production tools are absent:
+
+1. Call `cosmise_app_update_connection` with `state: "missing_key"` and leave the task waiting.
+2. Ask the operator or trusted coding-agent host to connect the integration or provide the approved credential **file path**; never request or repeat the value in chat.
+3. Import it into `COSMISE_MCP_TOKEN` in `~/.hermes/profiles/<active-profile>/.env` and configure that profile's `config.yaml`, never this app or repository.
+4. Reload MCP tools or restart the coding-agent session and verify `streamboards_get_context` exists.
+
+Do not continue production work until the key-scoped organisation and available tools have been verified.
+
 ## Security boundary
 
 1. The MCP credential determines the organisation. Never send or trust caller-selected `org_id`, `agency_id`, or `endpoint_id` as authority.
@@ -17,21 +30,22 @@ This app is the visible communications surface for an agent operating the organi
 ## Normal agent loop
 
 ```text
-1. cosmise_app_start_task
-2. Check the separate production MCP connection
-3. cosmise_app_update_connection (missing_key, checking, ready, working, or error)
-4. streamboards_get_context
-5. streamboards_get_capabilities
-6. streamboards_list_connections
-7. streamboards_list_query_catalog
-8. Before every meaningful production MCP call, call `cosmise_app_observe_call` with `status: "running"`
-9. After the production call, call `cosmise_app_observe_call` again with the same `call_id`, `status: "success"` or `"failed"`, and a safe summary of what was learned
-10. Perform requested Streamboards operations while continuing those paired observations
-11. Emit broader task progress with cosmise_app_update_task/show_message
-12. Verify stored state with the recommended read tools
-13. cosmise_app_show_verification
-14. cosmise_app_show_report when a report URL is available
-15. cosmise_app_complete_task
+1. cosmise_app_get_bootstrap
+2. cosmise_app_start_task
+3. Check the separate production MCP connection
+4. cosmise_app_update_connection (missing_key, checking, ready, working, or error)
+5. streamboards_get_context
+6. streamboards_get_capabilities
+7. streamboards_list_connections
+8. streamboards_list_query_catalog
+9. Before every meaningful production MCP call, call `cosmise_app_observe_call` with `status: "running"`
+10. After the production call, call `cosmise_app_observe_call` again with the same `call_id`, `status: "success"` or `"failed"`, and a safe summary of what was learned
+11. Perform requested Streamboards operations while continuing those paired observations
+12. Emit broader task progress with cosmise_app_update_task/show_message
+13. Verify stored state with the recommended read tools
+14. cosmise_app_show_verification
+15. cosmise_app_show_report when a report URL is available
+16. cosmise_app_complete_task
 ```
 
 Production MCP calls do not flow through the app automatically. The paired `cosmise_app_observe_call` calls are therefore required whenever this app has an active task. They are what make the existing **Building now** bar show what the agent is reading, learning, building, refreshing, verifying, and publishing in realtime. Do not send implementation trivia or raw payloads; send user-meaningful summaries only.
@@ -39,6 +53,9 @@ Production MCP calls do not flow through the app automatically. The paired `cosm
 If production MCP access is unavailable, immediately call `cosmise_app_update_connection` with `state: "missing_key"` and an actionable message, leave the report task in `waiting`, and stop before attempting production operations. Never send the key, key prefix, authorization header, or raw connection configuration to this app.
 
 ## Local communication tools
+
+### `cosmise_app_get_bootstrap`
+Read this first. It returns the complete machine-readable startup contract for production credential ownership, missing-access recovery, both API boundaries, required live observations, layout examples, metrics/formulas, refresh and completion verification.
 
 ### `cosmise_app_get_state`
 Read tasks, activity, connection status, and reports visible in the app.

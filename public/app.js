@@ -10,6 +10,8 @@ const ui = {
   initialized: false,
   contentSignature: null
 };
+const STATE_POLL_MS = 5000;
+let statePollInFlight = false;
 
 const $ = (selector) => document.querySelector(selector);
 const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character]));
@@ -268,10 +270,24 @@ async function api(path) {
   return body;
 }
 
-async function load() {
+async function load(forceContent = true) {
   const response = await api('/api/state');
   ui.state = response.data;
-  render(true);
+  render(forceContent);
+}
+
+function startStatePolling() {
+  setInterval(async () => {
+    if (statePollInFlight) return;
+    statePollInFlight = true;
+    try {
+      await load(false);
+    } catch (_) {
+      // SSE reconnects automatically; polling is the quiet fallback when it cannot.
+    } finally {
+      statePollInFlight = false;
+    }
+  }, STATE_POLL_MS);
 }
 
 function connectEvents() {
@@ -317,7 +333,10 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
-load().then(connectEvents).catch((error) => {
+load().then(() => {
+  connectEvents();
+  startStatePolling();
+}).catch((error) => {
   $('#content').innerHTML = `<div class="problem"><h2>Streamboards could not load</h2><p>${escapeHtml(error.message)}</p><button class="retry" type="button" data-action="retry-load">Try again</button></div>`;
   $('#repbar').hidden = true;
 });
