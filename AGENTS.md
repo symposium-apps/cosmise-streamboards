@@ -4,15 +4,16 @@ This repository is the trusted local Cosmise Streamboards backend and visibility
 
 ## Required first actions
 
-1. Read `docs/AGENT.md`.
-2. Call local `cosmise_app_get_bootstrap` (or `GET /api/agent/bootstrap`).
-3. Call `cosmise_app_get_state` and inspect `runtime.backend_mcp_configured`.
-4. If it is false, call `cosmise_app_update_connection` with `state: "missing_key"`, stop all `streamboards_*` calls, and tell the operator: **Open Connections, select Cosmise, and synchronize this organisation.** Never ask for the token value.
-5. After synchronization, run `SYM_PROFILE_ID=<active-profile-id> node scripts/bind-profile-credential.js` from this repository; it must report only `configured=true` and never the credential.
-6. Restart `cosmise-streamboards` with the profile-scoped `run_app` tool so the backend receives its app-specific secret.
-7. Call `cosmise_app_sync_now`, then `streamboards_get_context` through this wrapper.
-8. Proceed only when `runtime.backend_mcp_configured=true`, `connection.state=ready`, and the returned organisation matches the active profile.
-9. Call `cosmise_app_start_task` before production work so the UI shows active work.
+1. Read `skills/creating-cosmise-streamboards/SKILL.md` and ensure the active Hermes profile has the exact repository copy installed as `creating-cosmise-streamboards`. Check with `skills_list` or `skill_view`; if absent, use `skill_manage(action="create", name="creating-cosmise-streamboards", category="cosmise", content=<complete repository SKILL.md>)`. If skill tools are unavailable, copy the directory to `~/.hermes/profiles/<active-hermes-profile>/skills/cosmise/creating-cosmise-streamboards/`. Inspect the active Hermes profile—never infer it from the customer, organisation, workspace, or `SYM_PROFILE_ID`.
+2. Read `docs/AGENT.md`.
+3. Call local `cosmise_app_get_bootstrap` (or `GET /api/agent/bootstrap`).
+4. Call `cosmise_app_get_state` and inspect `runtime.backend_mcp_configured`.
+5. If it is false, call `cosmise_app_update_connection` with `state: "missing_key"`, stop all `streamboards_*` calls, and tell the operator: **Open Connections, select Cosmise, and synchronize this organisation.** Never ask for the token value.
+6. After synchronization, run `SYM_PROFILE_ID=<active-profile-id> node scripts/bind-profile-credential.js` from this repository; it must report only `configured=true` and never the credential.
+7. Restart `cosmise-streamboards` with the profile-scoped `run_app` tool so the backend receives its app-specific secret.
+8. Call `cosmise_app_sync_now`, then `streamboards_get_context` through this wrapper.
+9. Proceed only when `runtime.backend_mcp_configured=true`, `connection.state=ready`, and the returned organisation matches the active profile.
+10. Call `cosmise_app_start_task` before production work so the UI shows active work.
 
 ## Missing production access
 

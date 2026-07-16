@@ -4,6 +4,8 @@
 
 This app is the trusted backend and visible communications surface for organisation-scoped Cosmise Streamboards work. Its local MCP exposes every canonical `streamboards_*` tool, forwards calls to Cosmise with the backend-only profile credential, and records sanitized lifecycle activity automatically.
 
+Before following this contract, read `skills/creating-cosmise-streamboards/SKILL.md` and ensure that exact repository copy is installed in the active Hermes profile as `creating-cosmise-streamboards`. Use `skill_manage` when available; otherwise copy the skill directory into `~/.hermes/profiles/<active-hermes-profile>/skills/cosmise/creating-cosmise-streamboards/`. Inspect the active Hermes profile rather than inferring it from an organisation, workspace, customer, or `SYM_PROFILE_ID`.
+
 ## Required entry point and production credential
 
 Before Streamboards work, call `cosmise_app_get_bootstrap`, then `cosmise_app_get_state`. Treat `runtime.backend_mcp_configured=false` as a hard gate: stop all production calls until the exact recovery sequence below succeeds.
