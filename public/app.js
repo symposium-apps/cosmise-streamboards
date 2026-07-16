@@ -125,13 +125,14 @@ function renderRail() {
   const gate = backendCredentialMissing();
   const connection = ui.state?.connection || {};
   const organisation = connection.organisation?.name || connection.organisation?.id || '';
+  const railEntries = [...ui.entries].sort((left, right) => String(left.title || '').localeCompare(String(right.title || ''), undefined, { sensitivity: 'base', numeric: true }));
   const reports = gate
     ? '<div class="gatehint">Reports appear here once Cosmise is connected.</div>'
-    : ui.entries.length
-    ? ui.entries.map((entry) => `<button class="ri ${entry.key === ui.active ? 'on' : ''}" type="button" data-action="open" data-id="${escapeHtml(entry.key)}" data-rail-title="${escapeHtml(entry.title)}" aria-current="${entry.key === ui.active ? 'page' : 'false'}"><span class="ic">${escapeHtml(initials(entry.title))}<span class="s ${entry.status}"></span></span><span class="tx"><span class="n">${escapeHtml(entry.title)}</span></span></button>`).join('')
+    : railEntries.length
+    ? railEntries.map((entry) => `<button class="ri ${entry.key === ui.active ? 'on' : ''}" type="button" data-action="open" data-id="${escapeHtml(entry.key)}" data-rail-title="${escapeHtml(entry.title)}" aria-current="${entry.key === ui.active ? 'page' : 'false'}"><span class="ic">${escapeHtml(initials(entry.title))}<span class="s ${entry.status}"></span></span><span class="tx"><span class="n">${escapeHtml(entry.title)}</span></span></button>`).join('')
     : '';
   const footer = !gate && organisation ? `<div class="foot"><div class="u"><span class="av" aria-hidden="true"></span><div class="uu"><div class="n">${escapeHtml(organisation)}</div><div class="m">${ui.entries.length} Streamboard${ui.entries.length === 1 ? '' : 's'}</div></div></div></div>` : '';
-  const signature = JSON.stringify([gate, ui.railOpen, ui.active, organisation, ui.entries.map((entry) => [entry.key, entry.title, entry.status, entry.meta])]);
+  const signature = JSON.stringify([gate, ui.railOpen, ui.active, organisation, railEntries.map((entry) => [entry.key, entry.title, entry.status, entry.meta])]);
   if (ui.railSignature === signature) return;
   ui.railSignature = signature;
   $('#rail').className = `rail${ui.railOpen ? ' open' : ''}`;

@@ -1,6 +1,6 @@
 {
   "name": "cosmise-streamboards",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "private": true,
   "description": "Agent-facing Streamboards workspace for Symposium.",
   "repository": {
