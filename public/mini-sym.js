@@ -18,7 +18,8 @@ function render(state, connected = true) {
   const report = (state.reports || [])[0];
   const current = Math.max(0, Number(task?.progress?.current || 0));
   const total = Math.max(0, Number(task?.progress?.total || 0));
-  const operation = (state.events || []).find((event) => event.task_id === task?.id && String(event.operation || '').startsWith('streamboards_'))?.operation || task?.status || 'ready';
+  const rawOperation = (state.events || []).find((event) => event.task_id === task?.id && String(event.operation || '').startsWith('streamboards_'))?.operation || task?.status || 'ready';
+  const operation = String(rawOperation).replace(/^streamboards_/, '').replaceAll('_', ' ');
   const taskBlock = task
     ? `<div class="mstat"><div class="mt"><span>Agent</span><span class="live"><i></i>${task.status === 'running' ? 'Building' : 'Queued'}</span></div><div class="mn">${escapeHtml(task.title)}</div>${total ? `<div class="mbar"><progress max="${total}" value="${current}">${current} of ${total}</progress></div>` : ''}<div class="mstep">${total ? `${current} / ${total} widgets` : 'Agent working'} · ${escapeHtml(operation)}</div></div>`
     : '';

@@ -164,8 +164,23 @@ function taskOperation(task) {
 }
 
 function phaseLabel(event, task) {
-  const labels = { reading: 'Reading', learning: 'Learning', building: 'Building', refreshing: 'Refreshing', verifying: 'Verifying', publishing: 'Publishing' };
-  return labels[event?.phase] || (task?.status === 'running' ? 'Preparing' : task?.status || 'Working');
+  const labels = { reading: 'Reviewing data', learning: 'Finding insights', building: 'Building report', refreshing: 'Refreshing data', verifying: 'Quality check', publishing: 'Publishing report' };
+  return labels[event?.phase] || (task?.status === 'running' ? 'Preparing report' : task?.status === 'waiting' ? 'Waiting for access' : task?.status === 'queued' ? 'Up next' : 'Latest update');
+}
+
+function friendlyOperation(value) {
+  const operation = String(value || 'agent update');
+  const labels = {
+    'task.started': 'Report started',
+    'task.updated': 'Progress update',
+    'task.completed': 'Report ready',
+    'task.failed': 'Report needs attention',
+    'report.ready': 'Report ready',
+    'verification.completed': 'Quality check complete',
+    'reports.synchronized': 'Reports refreshed'
+  };
+  if (labels[operation]) return labels[operation];
+  return operation.replace(/^streamboards_/, '').replaceAll('_', ' ').replaceAll('.', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function observationDetail(event, fallback, includeLearned = false) {
@@ -198,6 +213,17 @@ function renderAgent() {
   }
 }
 
+function statusToastIcon(status) {
+  const icons = {
+    running: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.9-3M4 5v4h4M4 13a8 8 0 0 0 14.9 3M20 19v-4h-4"/></svg>',
+    queued: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v5l3 2"/></svg>',
+    success: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="m8.5 12 2.3 2.4 4.8-5"/></svg>',
+    failed: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3.8 19h16.4L12 4Z"/><path d="M12 9v4M12 16.5v.1"/></svg>',
+    info: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h3l2-5 4 10 2-5h5"/></svg>'
+  };
+  return icons[status] || icons.info;
+}
+
 function renderAgentToast() {
   const element = $('#agent-toast');
   const task = activeTask();
@@ -210,17 +236,18 @@ function renderAgentToast() {
   const operation = task ? taskOperation(task) : latest;
   const message = operation?.detail || operation?.title || task?.detail || task?.title || latest?.operation || 'Agent status updated.';
   const status = operation?.status || task?.status || latest?.status || 'info';
+  const toastStatus = task ? (task.status === 'waiting' || task.status === 'queued' ? 'queued' : 'running') : status;
   const timestamp = operation?.updated_at || operation?.created_at || task?.updated_at || latest?.updated_at || latest?.created_at;
   const label = task ? phaseLabel(operation, task) : status === 'failed' ? 'Needs attention' : status === 'success' ? 'Completed' : 'Latest update';
-  const signature = `${operation?.id || task?.id || 'status'}:${status}:${message}:${timestamp || ''}`;
+  const signature = `${operation?.id || task?.id || 'status'}:${toastStatus}:${message}:${timestamp || ''}`;
   if (ui.statusToastSignature === signature) {
     const time = element.querySelector('.agent-toast-time');
     if (time) time.textContent = timeAgo(timestamp);
     return;
   }
   ui.statusToastSignature = signature;
-  element.className = `agent-toast ${status}`;
-  element.innerHTML = `<span class="agent-toast-star" aria-hidden="true">✦</span><span class="agent-toast-copy"><span class="agent-toast-label">${escapeHtml(label)}</span><span class="agent-toast-message">${escapeHtml(message)}</span></span><span class="agent-toast-time">${escapeHtml(timeAgo(timestamp))}</span>`;
+  element.className = `agent-toast ${toastStatus}`;
+  element.innerHTML = `<span class="agent-toast-icon">${statusToastIcon(toastStatus)}</span><span class="agent-toast-copy"><span class="agent-toast-label">${escapeHtml(label)}</span><span class="agent-toast-message">${escapeHtml(message)}</span></span><span class="agent-toast-time">${escapeHtml(timeAgo(timestamp))}</span>`;
   element.hidden = false;
   element.classList.remove('arrive');
   requestAnimationFrame(() => element.classList.add('arrive'));
@@ -244,7 +271,7 @@ function renderToolbar(entry) {
 function buildLog(task) {
   const events = (ui.state?.events || []).filter((event) => !task?.id || event.task_id === task.id).slice(0, 10);
   if (!events.length) return '';
-  return `<div class="log">${events.map((event) => `<div class="l"><span class="c">${event.status === 'success' ? '✓' : '▸'}</span><span><b>${escapeHtml(event.source === 'remote_mcp' ? phaseLabel(event) : event.operation || 'agent')}</b> ${escapeHtml(observationDetail(event, event.detail || event.title || event.status, true))}</span></div>`).join('')}</div>`;
+  return `<div class="log">${events.map((event) => `<div class="l"><span class="c">${event.status === 'success' ? '✓' : '▸'}</span><span><b>${escapeHtml(event.source === 'remote_mcp' ? phaseLabel(event) : friendlyOperation(event.operation))}</b> ${escapeHtml(observationDetail(event, event.detail || event.title || event.status, true))}</span></div>`).join('')}</div>`;
 }
 
 function contentSignature(entry) {
