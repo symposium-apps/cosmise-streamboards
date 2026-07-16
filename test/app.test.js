@@ -54,12 +54,12 @@ test('health and docs expose the backend-only credential boundary', async () => 
   assert.equal(health.status, 200);
   assert.equal(health.body.credential_boundary, 'backend_only');
   assert.equal(health.body.production_tool_count, 78);
-  assert.equal(health.body.local_tool_count, 15);
+  assert.equal(health.body.local_tool_count, 16);
 
   const docs = await json('/api/docs/tools');
   assert.equal(docs.body.tool_count, 78);
   assert.equal(docs.body.tools.length, 78);
-  assert.equal(docs.body.local_tools.length, 15);
+  assert.equal(docs.body.local_tools.length, 16);
 });
 
 test('MCP initialization teaches the complete production and local workflow', async () => {
@@ -96,7 +96,7 @@ test('bootstrap is the complete coding-agent entry point', async () => {
 test('MCP lists local communication tools and every Streamboards wrapper', async () => {
   const response = await json('/mcp', { method: 'POST', body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} }) });
   assert.equal(response.status, 200);
-  assert.equal(response.body.result.tools.length, 93);
+  assert.equal(response.body.result.tools.length, 94);
   const names = new Set(response.body.result.tools.map((tool) => tool.name));
   assert(names.has('cosmise_app_get_bootstrap'));
   assert(names.has('cosmise_app_update_connection'));
@@ -265,7 +265,7 @@ test('production Streamboards calls are rejected at the app boundary', async () 
   assert.equal(response.status, 200);
   assert.equal(response.body.result.isError, true);
   const parsed = JSON.parse(response.body.result.content[0].text);
-  assert.match(parsed.error, /agent profile/);
+  assert.match(parsed.error, /app backend/);
   assert(!JSON.stringify(response.body).includes('COSMISE_MCP_KEY'));
 });
 

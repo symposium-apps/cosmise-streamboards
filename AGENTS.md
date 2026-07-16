@@ -4,7 +4,7 @@ This repository is the trusted local Cosmise Streamboards backend and visibility
 
 ## Required first actions
 
-1. Read `skills/creating-cosmise-streamboards/SKILL.md` and ensure the active Hermes profile has the exact repository copy installed as `creating-cosmise-streamboards`. Check with `skills_list` or `skill_view`; if absent, use `skill_manage(action="create", name="creating-cosmise-streamboards", category="cosmise", content=<complete repository SKILL.md>)`. If skill tools are unavailable, copy the directory to `~/.hermes/profiles/<active-hermes-profile>/skills/cosmise/creating-cosmise-streamboards/`. Inspect the active Hermes profile—never infer it from the customer, organisation, workspace, or `SYM_PROFILE_ID`.
+1. Run `node scripts/install-hermes-skill.js` to install or refresh the exact repository-owned `creating-cosmise-streamboards` skill in the active Hermes profile, then load it. The installer uses profile-scoped `HERMES_HOME` or explicit `HERMES_PROFILE`; it never infers a Hermes profile from the customer, organisation, workspace, or `SYM_PROFILE_ID`. If the current session already indexed skills, restart it after first installation.
 2. Read `docs/AGENT.md`.
 3. Call local `cosmise_app_get_bootstrap` (or `GET /api/agent/bootstrap`).
 4. Call `cosmise_app_get_state` and inspect `runtime.backend_mcp_configured`.

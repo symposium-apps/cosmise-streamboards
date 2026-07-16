@@ -19,13 +19,11 @@ Use this skill for any Cosmise Streamboard task: discovery, creation, widget sel
 
 This repository copy is canonical. Before Streamboards work, the active Hermes profile must have this skill in its own skill set.
 
-1. Read this file from `skills/creating-cosmise-streamboards/SKILL.md`.
-2. Check whether `creating-cosmise-streamboards` is available with `skills_list` or `skill_view`.
-3. If absent, install the exact repository copy into the **active** profile with `skill_manage(action="create", name="creating-cosmise-streamboards", category="cosmise", content=<this complete SKILL.md>)`.
-4. If skill tools are unavailable, copy this directory to:
-   `~/.hermes/profiles/<active-hermes-profile>/skills/cosmise/creating-cosmise-streamboards/`
-5. Never infer the Hermes profile name from an organisation, workspace, customer, or `SYM_PROFILE_ID`. Inspect the active Hermes profile first.
-6. When this repository skill changes, update the installed profile copy before the next Streamboards task.
+1. From this repository, run `node scripts/install-hermes-skill.js`.
+2. Check that `creating-cosmise-streamboards` is available with `skills_list` or `skill_view`.
+3. Load it before production work.
+4. Never infer the Hermes profile name from an organisation, workspace, customer, or `SYM_PROFILE_ID`. The installer requires profile-scoped `HERMES_HOME` or explicit `HERMES_PROFILE`.
+5. When this repository skill changes, rerun the installer before the next Streamboards task.
 
 Do not edit another Hermes profile. Installation always targets the profile running the current session.
 
@@ -177,6 +175,8 @@ Adapt this sequence rather than copying it mechanically:
 
 Choose the archetype from the audience. Executives need outcome hierarchy and honest formulas; operators need campaign/entity depth. A report serving both should begin with the command center and progressively disclose diagnostic detail below it.
 
+For the anonymized sample boundary, exact recurring geometry, formula-band semantics, period choices, and cautions, read `references/anonymized-premium-patterns.md`.
+
 ## Duplicate prevention
 
 Before creating a board:
@@ -197,6 +197,8 @@ Before creating a board:
 - Preserve the report iframe when both report ID and verified public URL are unchanged.
 - Inventory synchronization must not hijack the active report.
 - Use `public_url` for embedding. Treat `edit_url` as external navigation only.
+
+For the reusable producer/browser recipe, read `references/live-status-and-idempotency.md`.
 
 ## End-to-end build loop
 
