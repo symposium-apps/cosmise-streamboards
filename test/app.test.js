@@ -280,7 +280,8 @@ test('workspace uses the supplied Streamboards shell and omits docs UI', async (
   assert.equal(response.status, 200);
   assert.match(html, /Streamboard reports/);
   assert.match(html, /id="tabbar"/);
-  assert.match(html, /id="agent"/);
+  assert.doesNotMatch(html, /id="agent"/);
+  assert.doesNotMatch(html, /id="agent-toast"/);
   assert.match(html, /id="repbar"/);
   assert.doesNotMatch(html, /id="mini-toggle"/);
   assert.doesNotMatch(html, /id="mini-layer"/);

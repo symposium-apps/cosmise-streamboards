@@ -1,7 +1,7 @@
 ---
 name: creating-cosmise-streamboards
 description: Use when creating, updating, validating, publishing, repairing, or deleting Cosmise Streamboards through the cosmise-streamboards app and its wrapped production MCP.
-version: 0.2.1
+version: 0.3.0
 author: Cosmise Streamboards
 license: MIT
 metadata:
