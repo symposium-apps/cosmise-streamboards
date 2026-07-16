@@ -14,22 +14,14 @@
     "environment": [
       {
         "name": "COSMISE_MCP_URL",
-        "description": "Production Cosmise MCP endpoint used by the private backend wrapper.",
-        "required": false,
         "default": "https://cosmise.com/api/mcp"
-      },
-      {
-        "name": "COSMISE_REPORT_SYNC_MS",
-        "description": "Background report metadata synchronization interval in milliseconds.",
-        "required": false,
-        "default": "60000"
       }
     ],
     "secrets": [
       {
         "name": "COSMISE_MCP_TOKEN",
-        "description": "Organization-scoped Cosmise MCP credential available only to the app backend. SYM-Node may materialize it directly or the backend imports the same key from the owning profile's private managed environment.",
-        "required": false
+        "required": false,
+        "description": "Backend-only organisation-scoped Cosmise MCP credential. The app also discovers the connected profile's protected Gateway environment at runtime."
       }
     ]
   },
@@ -37,18 +29,20 @@
     {
       "id": "cosmise",
       "required": true,
-      "reason": "Supply the organization-scoped credential to the private app backend so its single wrapped MCP can synchronize reports and instrument every Streamboards tool call."
+      "reason": "Give this trusted backend organisation-scoped read/write Cosmise MCP access without exposing the credential to browser code."
     }
   ],
   "agent": {
     "instructions_path": "AGENTS.md",
     "bootstrap_path": "/api/agent/bootstrap",
-    "mcp_path": "/mcp"
+    "mcp_path": "/mcp",
+    "backend_api_catalog_path": "/api/cosmise/tools",
+    "activity_state_path": "/api/state"
   },
   "permissions": [
     {
       "id": "network.external",
-      "reason": "Render approved Cosmise Streamboard URLs supplied by the agent."
+      "reason": "Call the profile-scoped Cosmise MCP from the backend and render canonical public Streamboard URLs."
     }
   ],
   "data": {

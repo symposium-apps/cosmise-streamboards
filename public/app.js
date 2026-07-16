@@ -60,8 +60,8 @@ function buildEntries() {
     entries.set(key, {
       key,
       title: report.title || 'Streamboard',
-      status: report.status === 'failed' ? 'failed' : report.public_url ? 'ready' : 'private',
-      meta: `${report.public_url ? (report.verification ? 'verified' : 'ready') : 'private'} · ${timeAgo(report.updated_at)}`,
+      status: report.status === 'failed' ? 'failed' : 'ready',
+      meta: `${report.verification ? 'verified' : 'ready'} · ${timeAgo(report.updated_at)}`,
       report,
       task: null
     });
@@ -107,11 +107,6 @@ function reconcileTabs() {
       ui.active = first.key;
     }
     ui.initialized = true;
-  }
-  if (!ui.active && ui.open.length === 0 && ui.entries[0]) {
-    ui.open = [ui.entries[0].key];
-    ui.active = ui.entries[0].key;
-    ui.contentSignature = null;
   }
   if (ui.active && !keys.has(ui.active)) ui.active = ui.open[0] || null;
 }
@@ -162,13 +157,20 @@ function renderAgent() {
     element.innerHTML = `<span class="dot"></span><div class="msg"><b>Building now</b> · ${escapeHtml(detail)}</div><span class="pill">${value.total ? `${value.current} / ${value.total} widgets` : escapeHtml(phase)}</span>${value.total ? `<div class="barwrap"><progress max="${value.total}" value="${value.current}">${value.percent}%</progress></div>` : ''}`;
     return;
   }
-  element.hidden = true;
-  element.innerHTML = '';
+  const latest = (ui.state?.events || [])[0];
+  if (latest) {
+    element.hidden = false;
+    element.className = `agent ${latest.status === 'failed' ? 'failed' : ''}`;
+    element.innerHTML = `<span class="dot"></span><div class="msg"><b>Latest status</b> · ${escapeHtml(latest.detail || latest.title || latest.operation)}</div><span class="pill">${escapeHtml(timeAgo(latest.updated_at || latest.created_at))}</span>`;
+  } else {
+    element.hidden = true;
+    element.innerHTML = '';
+  }
 }
 
 function renderToolbar(entry) {
   const toolbar = $('#repbar');
-  if (!entry?.report || entry.status !== 'ready') {
+  if (!entry?.report?.public_url || entry.status !== 'ready') {
     toolbar.hidden = true;
     toolbar.innerHTML = '';
     return;
@@ -179,7 +181,7 @@ function renderToolbar(entry) {
 }
 
 function buildLog(task) {
-  const events = (ui.state?.events || []).filter((event) => event.task_id === task?.id).slice(0, 10);
+  const events = (ui.state?.events || []).filter((event) => !task?.id || event.task_id === task.id).slice(0, 10);
   if (!events.length) return '';
   return `<div class="log">${events.map((event) => `<div class="l"><span class="c">${event.status === 'success' ? '✓' : '▸'}</span><span><b>${escapeHtml(event.source === 'remote_mcp' ? phaseLabel(event) : event.operation || 'agent')}</b> ${escapeHtml(observationDetail(event, event.detail || event.title || event.status, true))}</span></div>`).join('')}</div>`;
 }
@@ -198,17 +200,21 @@ function renderContent(entry, force = false) {
   ui.contentSignature = signature;
   const content = $('#content');
   if (!entry) {
-    content.innerHTML = '<div class="welcome"><div class="m"><img src="/assets/cosmise-mascot.png" alt="Cosmise"></div><h2>Tell an agent to create a Cosmise Streamboard</h2></div>';
+    const connection = ui.state?.connection || {};
+    const runtime = ui.state?.runtime || {};
+    const fileCount = runtime.accessible_files?.count;
+    const status = [connection.configured ? connection.message || 'Cosmise MCP connected.' : 'Connect Cosmise to start synchronizing Streamboards.', runtime.backend_mcp_configured ? 'Backend MCP ready' : 'Backend MCP key missing', Number.isFinite(fileCount) ? `${fileCount} server files available` : ''].filter(Boolean).join(' · ');
+    content.innerHTML = `<div class="welcome"><div class="m"><img src="/assets/cosmise-mascot.png" alt="Cosmise"></div><h2>Tell an agent to create a Cosmise Streamboard</h2><p>${escapeHtml(status)}</p>${buildLog(null)}</div>`;
     return;
   }
-  if (entry.status === 'ready' && entry.report?.public_url) {
+  if (entry.status === 'ready' && entry.report) {
     const frameUrl = entry.report.public_url;
+    if (!frameUrl) {
+      content.innerHTML = `<div class="empty"><div class="m"><img src="/assets/cosmise-mascot.png" alt=""></div><h2>${escapeHtml(entry.title)}</h2><p>This Streamboard exists, but Cosmise has not returned a public URL. The private edit page is never embedded because it requires a signed-in Cosmise session.</p>${buildLog(null)}</div>`;
+      return;
+    }
     content.innerHTML = `<article class="report-view"><header class="report-mast"><div><div class="report-title">${escapeHtml(entry.title)}</div><div class="report-sub">${escapeHtml(entry.report.organisation || entry.report.public_url || frameUrl)}</div></div><span class="live"><i></i>Live</span></header><div class="frame-wrap"><div class="frame-loading"><i></i>Loading Streamboard</div><iframe id="report-frame" src="${escapeHtml(frameUrl)}" title="${escapeHtml(entry.title)}" referrerpolicy="no-referrer"></iframe></div></article>`;
     $('#report-frame').addEventListener('load', () => $('.frame-wrap')?.classList.add('loaded'), { once: true });
-    return;
-  }
-  if (entry.status === 'private' && entry.report) {
-    content.innerHTML = `<div class="empty"><div class="m"><img src="/assets/cosmise-mascot.png" alt=""></div><h2>${escapeHtml(entry.title)}</h2><p>This Streamboard does not have a verified public URL yet. Publish it before embedding it here.</p><div class="st queued"><span class="d"></span>Private Streamboard · available in Cosmise</div>${entry.report.edit_url ? '<button class="retry" type="button" data-action="external">Open in Cosmise ↗</button>' : ''}</div>`;
     return;
   }
   const task = entry.task || {};
@@ -327,7 +333,7 @@ document.addEventListener('click', async (event) => {
     else if (action === 'close') { event.stopPropagation(); closeEntry(id); }
     else if (action === 'copy') await copyReport(target);
     else if (action === 'refresh') renderContent(activeEntry(), true);
-    else if (action === 'external') { const entry = activeEntry(); const url = entry?.report?.public_url || entry?.report?.edit_url; if (url) window.open(url, '_blank', 'noopener,noreferrer'); }
+    else if (action === 'external') { const url = currentUrl(); if (url) window.open(url, '_blank', 'noopener,noreferrer'); }
     else if (action === 'fullscreen') await $('#content').requestFullscreen();
     else if (action === 'retry-load') { await load(); }
   } catch (error) { toast(error.message); }

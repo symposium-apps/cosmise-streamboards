@@ -1,44 +1,43 @@
 # Coding-agent entry point
 
-This app exposes one private backend MCP at `/mcp`. It wraps every credential-allowed production Cosmise `streamboards_*` tool and the local `cosmise_app_*` communication tools.
+This repository is the trusted local Cosmise Streamboards backend and visibility app. Its local `/mcp` wraps every canonical `streamboards_*` production tool, calls `https://cosmise.com/api/mcp` with the backend-only profile credential, and records call status automatically. Do not bypass it with a separate production MCP connection.
 
-## Required start
+## Required first actions
 
-1. Connect to this app's wrapped `/mcp` endpoint using the backend-managed Bearer credential.
-2. Call `cosmise_app_get_bootstrap`.
-3. Use the wrapped `streamboards_*` tools for all production work. Do not bypass the wrapper with a separate direct Cosmise MCP connection.
+1. Read `docs/AGENT.md`.
+2. Call local `cosmise_app_get_bootstrap` (or `GET /api/agent/bootstrap`).
+3. Call `cosmise_app_start_task` immediately so the existing UI shows active work.
+4. Call local `streamboards_get_context`; it proves the wrapper can reach the credential-scoped organisation.
 
-The wrapper automatically records sanitized `running`, `success`, and `failed` activity around every production tool call. Manual observation calls are optional and should only add useful human context.
+## Missing production access
 
-## Credential boundary
+The app backend loads `COSMISE_MCP_TOKEN` from its process environment or `/srv/symposium-data/profile-runtime/<profile>/hermes-app-secrets.env`. Connect the profile's **Cosmise** integration, then restart the app backend. Never ask for, print, log, return, persist, or send the token to browser code, `.sym-data`, tasks, activity, reports, templates, documentation, or chat.
 
-`COSMISE_MCP_TOKEN` belongs to the trusted app backend. SYM-Node may inject it directly; on managed workers the backend can import only that named value from the owning profile's private managed environment.
+If production tools remain unavailable, leave the task in `waiting`, keep the UI connection state at `missing_key`, explain the required operator action, and stop before production work.
 
-Never put the credential in:
+## Required build loop
 
-- browser code or responses;
-- `/api/state` or `.sym-data`;
-- tasks, activity, reports or templates;
-- logs, source, documentation or chat.
+1. `cosmise_app_start_task`.
+2. Discover production context, capabilities, connections and query catalog through this local MCP.
+3. Inspect existing boards/branding plus both layout sources:
+   - `cosmise_app_list_layout_templates` for bundled sanitized real-report examples;
+   - `streamboards_list_templates` for available live templates.
+4. Make every `streamboards_*` call through this wrapper; running/success/failure activity is automatic.
+5. Continue task progress updates while creating the board, widgets and exact 48-column layout.
+6. Validate, dry-run refresh, execute refresh, poll cache status to terminal and inspect rendered usefulness.
+7. Call `cosmise_app_show_verification`, then `cosmise_app_complete_task`. Report discovery and canonical URLs synchronize automatically.
 
-The wrapped MCP and private write APIs require a matching Bearer credential. Public browser routes expose sanitized read-only state only.
+## Layout and metric rules
 
-## Report workflow
+- Review two or three relevant existing layout examples before choosing a composition. Map neutral slots to newly created widget IDs; never copy client identifiers, names, values or prose.
+- `streamboards_list_query_catalog` and live tool schemas are authoritative.
+- Use fixed query widgets only for catalogued keys.
+- Use master metric widgets only for supported platform/metric/display combinations.
+- Formula widgets require catalogued tokens, available inputs, safe divide-by-zero behavior, clear units and honest labels. Blended efficiency is not attributed ROAS.
+- Refresh and inspect every dynamic widget. Remove or hide empty, unavailable or misleading widgets unless an explicit meaningful zero-state was requested.
 
-1. Read organization context, capabilities, connections and query catalog.
-2. Inspect existing boards, branding, live templates and `cosmise_app_list_layout_templates`.
-3. Create or update the Streamboard through wrapped production tools.
-4. Use supported metrics and exact 48-column geometry.
-5. Validate, refresh, poll cache state to terminal and inspect rendered usefulness.
-6. Publish only when requested and obtain canonical URLs through `streamboards_get_urls`.
-7. Embed only `public_url`. Keep `edit_url` external. Protected reports require short-lived embed access.
+## Realtime and security
 
-## Realtime state
+The browser receives immediate local state over SSE and polls `/api/state` every two seconds. Wrapped production calls write sanitized lifecycle activity automatically; state keeps at most 100 tasks, events, and reports and the UI shows the latest ten events.
 
-- SSE broadcasts local state immediately.
-- The browser reconciles `/api/state` every two seconds.
-- Local JSON retains at most 100 tasks, 100 events and 100 reports.
-- The visible activity endpoint returns the latest 10 events.
-- Raw MCP arguments and responses are never persisted.
-
-See `docs/AGENT.md` for the complete tool, metric, layout and verification reference.
+Never send credentials, authorization headers, raw arguments, raw API responses, account/customer/property IDs, production connection details or secret-bearing errors to the local app. Keep activity concise and understandable to a non-technical viewer. Do not redesign the status UI.

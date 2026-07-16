@@ -49,17 +49,17 @@ async function json(url, options = {}) {
   return { status: response.status, body: await response.json() };
 }
 
-test('health and docs expose the agent-only credential boundary', async () => {
+test('health and docs expose the backend-only credential boundary', async () => {
   const health = await json('/api/health');
   assert.equal(health.status, 200);
-  assert.equal(health.body.credential_boundary, 'agent_only');
+  assert.equal(health.body.credential_boundary, 'backend_only');
   assert.equal(health.body.production_tool_count, 78);
-  assert.equal(health.body.local_tool_count, 14);
+  assert.equal(health.body.local_tool_count, 15);
 
   const docs = await json('/api/docs/tools');
   assert.equal(docs.body.tool_count, 78);
   assert.equal(docs.body.tools.length, 78);
-  assert.equal(docs.body.local_tools.length, 14);
+  assert.equal(docs.body.local_tools.length, 15);
 });
 
 test('MCP initialization teaches the complete production and local workflow', async () => {
@@ -71,8 +71,7 @@ test('MCP initialization teaches the complete production and local workflow', as
   assert.match(response.body.result.instructions, /streamboards_list_query_catalog/);
   assert.match(response.body.result.instructions, /cosmise_app_list_layout_templates/);
   assert.match(response.body.result.instructions, /formula tokens/i);
-  assert.match(response.body.result.instructions, /before the production call/i);
-  assert.match(response.body.result.instructions, /same call_id/i);
+  assert.match(response.body.result.instructions, /automatically records/i);
   assert.match(response.body.result.instructions, /never send credentials/i);
   assert.match(response.body.result.instructions, /layout/i);
   assert.match(response.body.result.instructions, /query_catalog/i);
@@ -84,19 +83,19 @@ test('bootstrap is the complete coding-agent entry point', async () => {
   const bootstrap = response.body.data;
   assert.equal(bootstrap.api_boundaries.production.url, 'https://cosmise.com/api/mcp');
   assert.equal(bootstrap.api_boundaries.local.mcp_path, '/mcp');
-  assert.equal(bootstrap.credential_setup.profile_env_path, '~/.hermes/profiles/<active-profile>/.env');
+  assert.equal(bootstrap.credential_setup.profile_env_path, '/srv/symposium-data/profile-runtime/<profile>/hermes-app-secrets.env');
   assert.equal(bootstrap.credential_setup.environment_variable, 'COSMISE_MCP_TOKEN');
-  assert(bootstrap.credential_setup.missing_access_steps.some((step) => /credential file path/i.test(step)));
+  assert(bootstrap.credential_setup.missing_access_steps.some((step) => /profile-scoped Cosmise integration/i.test(step)));
   assert(bootstrap.required_workflow.some((step) => step.includes('cosmise_app_start_task')));
   assert.equal(bootstrap.layouts.grid_columns, 48);
   assert.match(bootstrap.metrics.source_of_truth, /streamboards_list_query_catalog/);
   assert(!JSON.stringify(bootstrap).includes('csk_'));
 });
 
-test('MCP lists local communication tools only', async () => {
+test('MCP lists local communication tools and every Streamboards wrapper', async () => {
   const response = await json('/mcp', { method: 'POST', body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list', params: {} }) });
   assert.equal(response.status, 200);
-  assert.equal(response.body.result.tools.length, 14);
+  assert.equal(response.body.result.tools.length, 93);
   const names = new Set(response.body.result.tools.map((tool) => tool.name));
   assert(names.has('cosmise_app_get_bootstrap'));
   assert(names.has('cosmise_app_update_connection'));
@@ -104,7 +103,8 @@ test('MCP lists local communication tools only', async () => {
   assert(names.has('cosmise_app_observe_call'));
   assert(names.has('cosmise_app_show_report'));
   assert(names.has('cosmise_app_list_layout_templates'));
-  assert(!names.has('streamboards_validate'));
+  assert(names.has('cosmise_app_sync_now'));
+  assert(names.has('streamboards_validate'));
 });
 
 test('local MCP updates tasks, activity, verification, and reports', async () => {
@@ -307,7 +307,7 @@ test('Mini-Sym exposes the supplied compact live-state surface', async () => {
 test('browser clients reconcile local state when SSE is interrupted', async () => {
   const desktop = await (await fetch(base + '/app.js')).text();
   const mini = await (await fetch(base + '/mini-sym.js')).text();
-  assert.match(desktop, /STATE_POLL_MS = 5000/);
+  assert.match(desktop, /STATE_POLL_MS = 2000/);
   assert.match(desktop, /startStatePolling/);
   assert.match(mini, /source\.readyState === EventSource\.OPEN/);
   assert.match(mini, /fetch\('\/api\/state'/);

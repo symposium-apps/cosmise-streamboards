@@ -1,77 +1,175 @@
-# Backend API and wrapped MCP
+# Local API and MCP
 
-The managed SYM app URL serves a browser-safe read surface and a private backend control surface. JSON bodies are limited to 256 KiB.
+Base URL is the managed SYM app URL. For local development it defaults to `http://127.0.0.1:4322`.
 
-## Authentication
+All JSON bodies are limited to 256 KiB. Secret values are never accepted or returned by these endpoints. Mutating, wrapper, and MCP routes are localhost-only.
 
-Private endpoints require:
+## Response envelope
 
-```text
-Authorization: Bearer <COSMISE_MCP_TOKEN>
+Local HTTP APIs return:
+
+```json
+{
+  "ok": true,
+  "data": {},
+  "receipt": {
+    "action": "update_task",
+    "changed": true,
+    "verification": null,
+    "at": "2026-07-13T00:00:00.000Z"
+  }
+}
 ```
 
-The token is read from the app backend environment, forwarded only to `https://cosmise.com/api/mcp`, and never returned or persisted.
+Failures return an HTTP 4xx response:
 
-## Public read-only endpoints
+```json
+{
+  "ok": false,
+  "error": "Human-readable explanation"
+}
+```
 
-- `GET /_sym/health` — runtime health and boolean backend readiness.
-- `GET /api/health` — safe service/tool counts.
-- `GET /api/state` — complete bounded browser-safe state.
-- `GET /api/status` — safe connection state.
-- `GET /api/tasks` — at most 100 tasks.
-- `GET /api/activity` — latest 10 of at most 100 persisted events.
-- `GET /api/reports` — at most 100 synchronized reports.
-- `GET /api/events/stream` — immediate SSE state snapshots.
-- `GET /api/templates` and `/api/templates/:id` — sanitized structural layouts.
+## Health and state
 
-The browser also reconciles `/api/state` every two seconds.
+### `GET /_sym/health`
+Managed-runtime health endpoint.
 
-## Private local writes
+### `GET /api/health`
+Returns app status, the `backend_only` credential boundary, a safe configured boolean, and documented production/local tool counts.
 
-Bearer authentication is required for:
+### `GET /api/state`
+Returns the complete browser-safe state: profile ID, connection status, backend readiness, safe server file inventory, tasks, at most 100 activity events, and at most 100 synchronized reports.
 
-- `PATCH /api/status`
-- `POST /api/tasks`
-- `PATCH /api/tasks/:id`
-- `POST/DELETE /api/activity`
-- `POST/DELETE /api/reports`
-- `POST /api/agent/calls`
+### `GET /api/status`
+Returns only connection status.
 
-Only `public_url` is embeddable. `edit_url` opens externally. URLs must use HTTPS on `cosmise.com` or its subdomains.
+### `PATCH /api/status`
+Agent status display update. Accepted states are `missing_key`, `checking`, `ready`, `working`, and `error`; safe fields include `mode`, `organisation`, `endpoint`, `message`, and `last_checked_at`. Do not pass credentials.
 
-## Custom Cosmise backend wrapper
+## Tasks
+
+### `POST /api/tasks`
+
+```json
+{
+  "id": "monthly-report",
+  "title": "Build monthly report",
+  "detail": "Checking connected platforms.",
+  "status": "running",
+  "progress": { "current": 1, "total": 8 }
+}
+```
+
+### `PATCH /api/tasks/:id`
+Updates title, detail, status, progress, or resource. Terminal statuses set `completed_at`.
+
+### `GET /api/tasks`
+Lists newest tasks first.
+
+## Activity
+
+### `POST /api/activity`
+
+```json
+{
+  "task_id": "monthly-report",
+  "status": "success",
+  "operation": "streamboards_validate",
+  "title": "Report structure verified",
+  "detail": "Layout and endpoint checks passed.",
+  "verification": {
+    "ok": true,
+    "layout_ok": true,
+    "endpoint_ok": true,
+    "cache_errors": 0
+  }
+}
+```
+
+### `GET /api/activity`
+Lists newest events first.
+
+### `DELETE /api/activity?confirm=true`
+Clears local task and event history. Reports remain.
+
+## Realtime stream
+
+### `GET /api/events/stream`
+Server-Sent Events endpoint. Event name is `state`; each event contains the complete browser-safe state so reconnecting clients can reconcile without replay gaps.
+
+```text
+event: state
+data: {"type":"event","at":"...","state":{...}}
+```
+
+A heartbeat comment is sent every 20 seconds.
+
+## Reports
+
+### `POST /api/reports`
+
+```json
+{
+  "streamboard_id": "board_123",
+  "title": "Monthly Performance",
+  "description": "Monthly acquisition and revenue performance.",
+  "organisation": "Example organisation",
+  "url": "https://cosmise.com/board/example/monthly-performance",
+  "public_url": "https://cosmise.com/board/example/monthly-performance",
+  "edit_url": "https://cosmise.com/dashboard/streamboards/board_123",
+  "verification": {
+    "ok": true,
+    "publication_ok": true,
+    "layout_ok": true,
+    "cache_errors": 0
+  }
+}
+```
+
+Only HTTPS `cosmise.com` URLs and subdomains are accepted. This prevents the app from becoming an arbitrary URL/iframe launcher.
+
+### `GET /api/reports`
+Lists reports visible in the app.
+
+### `DELETE /api/reports/:id`
+Removes a local report card/viewer entry. It does not delete the remote Streamboard.
+
+## Documentation
+
+### `GET /api/docs/tools`
+Returns the generated 78-tool documentation catalog and local communication tools. This is an agent endpoint, not a dashboard page. The live Cosmise response remains authoritative for deployed key-specific availability.
+
+## Cosmise Streamboards backend wrapper
 
 ### `GET /api/cosmise/tools`
+Returns all 78 exact custom backend routes with tool mode, category, and input schema.
 
-Returns every credential-allowed wrapped `streamboards_*` tool and its live input schema.
+### `POST /api/cosmise/tools/:exactToolName`
+Calls the matching canonical Streamboards MCP tool. The JSON body is the tool argument object. Every catalog tool has a concrete registered route, for example:
 
-### `POST /api/cosmise/tools/:tool`
+```text
+POST /api/cosmise/tools/streamboards_get_context
+POST /api/cosmise/tools/streamboards_create
+POST /api/cosmise/tools/streamboards_validate
+POST /api/cosmise/tools/streamboards_get_urls
+```
 
-Calls one wrapped Streamboards tool with the JSON body as arguments. The backend automatically:
-
-1. creates or reuses a visible task;
-2. records a sanitized running event;
-3. forwards the call to production Cosmise MCP;
-4. records success/failure and duration;
-5. reconciles safe report metadata when present;
-6. returns the real MCP result.
-
-Raw arguments and responses are not persisted in local state.
+The backend supplies its private authorization header, decodes the MCP text result, returns `{ ok, tool, data, receipt }`, and automatically writes one sanitized bounded activity event.
 
 ### `POST /api/cosmise/sync`
+Immediately reconciles organisation context, all Streamboards, and missing canonical URLs into local state. The backend also performs this reconciliation periodically.
 
-Synchronizes organization context and up to 100 Streamboards into local report state. Canonical URLs are resolved for the latest 10 reports during each sync.
+### `GET /api/templates`
+Returns the versioned template examples bundled in `data/layout-templates.json`. Optional query parameters: `widget_type` (comma-separated), `min_widgets`, `max_widgets`, and `limit` (maximum 100). Each template includes neutral widget slots, exact `x/y/w/h` geometry, safe widget/query families, and generic display configuration.
 
-## Combined wrapped MCP
+### `GET /api/templates/:id`
+Returns one complete bundled layout example and the rules the agent must follow while adapting it. Templates are app files and change only when a new app version adds or edits them. There is no runtime import/write endpoint.
+
+## Local MCP
 
 ### `POST /mcp`
-
-This is the single MCP endpoint for agents. It combines:
-
-- every credential-allowed production `streamboards_*` tool;
-- local `cosmise_app_*` task, state, report, verification and layout tools.
-
-Example:
+JSON-RPC endpoint compatible with MCP operations:
 
 ```json
 {
@@ -90,20 +188,14 @@ Tool call:
   "id": 2,
   "method": "tools/call",
   "params": {
-    "name": "streamboards_list",
-    "arguments": { "limit": 100 }
+    "name": "cosmise_app_show_message",
+    "arguments": {
+      "status": "running",
+      "title": "Refreshing report data",
+      "detail": "Waiting for three Streamboards widgets."
+    }
   }
 }
 ```
 
-Agents should use this wrapper rather than a separate direct production Cosmise MCP server so realtime status cannot be bypassed.
-
-## State retention
-
-`.sym-data/state.json` is written atomically and capped at:
-
-- 100 tasks;
-- 100 activity events;
-- 100 reports.
-
-Active state is delivered immediately through SSE and repaired through two-second polling.
+This localhost-only endpoint exposes 15 `cosmise_app_*` communication tools plus every canonical `streamboards_*` tool. Streamboards calls use the same backend wrapper and automatic activity lifecycle as the custom HTTP routes.
