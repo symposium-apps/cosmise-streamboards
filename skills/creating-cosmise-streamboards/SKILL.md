@@ -1,7 +1,7 @@
 ---
 name: creating-cosmise-streamboards
 description: Use when creating, updating, validating, publishing, repairing, or deleting Cosmise Streamboards through the cosmise-streamboards app and its wrapped production MCP.
-version: 0.2.0
+version: 0.2.1
 author: Cosmise Streamboards
 license: MIT
 metadata:
@@ -36,6 +36,28 @@ Do not edit another Hermes profile. Installation always targets the profile runn
 - Never claim cache completion while work is scheduled or running.
 - Never claim email delivery; a send receipt proves only that the application completed the send call.
 - Preview destructive operations. Require explicit confirmation for permanent deletion unless the user has already clearly authorized it.
+- For permanent deletion, call `streamboards_preview_delete`, then call `streamboards_delete` with both `confirm: true` and the exact `confirm_streamboard_name`. A dry-run response with `confirm_required: true` is not deletion; require `deleted: true` and then verify the board is absent from `streamboards_list`.
+
+## Exact production credential binding contract
+
+Do not search the repository, shell history, arbitrary environment files, another profile, or the browser for a Cosmise token. Do not ask the operator to paste one. The only valid source is the Cosmise connection already synchronized for the active Symposium profile.
+
+When `runtime.backend_mcp_configured` is false, perform exactly this sequence from the app repository:
+
+1. Tell the operator: **Open Connections, select Cosmise, and synchronize this organisation.**
+2. Determine the active Symposium profile ID from the app/runtime context; never infer it from an organisation or customer name.
+3. Run:
+   `SYM_PROFILE_ID=<active-profile-id> node scripts/bind-profile-credential.js`
+4. The helper reads only:
+   `/srv/symposium-data/profile-runtime/<active-profile-id>/hermes-app-secrets.env`
+5. It copies only `COSMISE_MCP_TOKEN` into:
+   `/srv/symposium-data/profile-runtime/<active-profile-id>/apps/cosmise-streamboards/secrets.env`
+6. It writes the target atomically with private permissions and must print only a safe `configured=true` receipt—never the token.
+7. Restart `cosmise-streamboards` with the **profile-scoped `run_app` tool**. Writing `secrets.env` alone does not alter an already-running process; the managed restart is what injects `COSMISE_MCP_TOKEN` into the app's actual process environment.
+8. Call `cosmise_app_get_state`, `cosmise_app_sync_now`, and `streamboards_get_context`.
+9. Proceed only when `runtime.backend_mcp_configured=true`, `connection.state=ready`, and the credential-resolved organisation matches the active profile.
+
+If the source file or named token is absent, stop at `missing_key`. Never substitute a local `.env`, a token from another profile, or a caller-supplied organisation identifier.
 
 ## Required startup sequence
 
@@ -190,9 +212,14 @@ Before creating a board:
 
 ## Realtime UI behavior
 
-- Start and update a visible task during genuine work.
+- Start one visible task during genuine work and attach `resource={type:streamboard,id,title}` immediately after board creation. Never leave a build task globally running without its report resource.
+- Keep widget progress monotonic and current: after each successful datastream creation, update `current`; on completion set `current=total` before marking the task terminal. Never leave `0 / N` after writes have succeeded.
 - Background report inventory and connection reconciliation must use `record: false`; maintenance polling must not look like agent work.
-- The persistent status toast should show loading only for a genuine `running`, `queued`, or `waiting` task.
+- Build status is overlay-only. Do not render a global agent strip or floating agent-status toast. A utility receipt such as “link copied” is separate and must never impersonate build activity.
+- Show the overlay only for a genuine nonterminal task linked to that exact report. A wrapped call event, inventory sync, stale activity record, or unrelated task must never activate it.
+- Building a new unpublished report overlays a Streamboard skeleton. Editing a published report overlays the still-mounted iframe.
+- Preserve the overlay DOM while its task remains active: update status text and progress width in place. Never replace the overlay root during polling or SSE reconciliation, because that restarts animations and causes flashing.
+- Remove the overlay immediately when the linked task becomes terminal.
 - Do not repeatedly select an already active report.
 - Preserve the report iframe when both report ID and verified public URL are unchanged.
 - Inventory synchronization must not hijack the active report.

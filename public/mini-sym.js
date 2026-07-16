@@ -14,14 +14,13 @@ function timeAgo(value) {
 }
 
 function render(state, connected = true) {
-  const task = (state.tasks || []).find((item) => ['running', 'queued', 'waiting'].includes(item.status));
+  const task = (state.tasks || []).find((item) => ['running', 'queued', 'waiting', 'failed'].includes(item.status));
   const report = (state.reports || [])[0];
   const current = Math.max(0, Number(task?.progress?.current || 0));
   const total = Math.max(0, Number(task?.progress?.total || 0));
-  const rawOperation = (state.events || []).find((event) => event.task_id === task?.id && String(event.operation || '').startsWith('streamboards_'))?.operation || task?.status || 'ready';
-  const operation = String(rawOperation).replace(/^streamboards_/, '').replaceAll('_', ' ');
+  const failed = task?.status === 'failed';
   const taskBlock = task
-    ? `<div class="mstat"><div class="mt"><span>Agent</span><span class="live"><i></i>${task.status === 'running' ? 'Building' : 'Queued'}</span></div><div class="mn">${escapeHtml(task.title)}</div>${total ? `<div class="mbar"><progress max="${total}" value="${current}">${current} of ${total}</progress></div>` : ''}<div class="mstep">${total ? `${current} / ${total} widgets` : 'Agent working'} · ${escapeHtml(operation)}</div></div>`
+    ? `<div class="mstat"><div class="mt"><span>Agent</span>${failed ? '<span class="fail">Needs attention</span>' : `<span class="live"><i></i>${task.status === 'running' ? 'Building' : 'Queued'}</span>`}</div><div class="mn">${escapeHtml(task.title)}</div>${!failed && total ? `<div class="mbar"><progress max="${total}" value="${current}">${current} of ${total}</progress></div>` : ''}<div class="mstep">${failed ? `Quality check failed · ${timeAgo(task.updated_at)}` : `${total ? `${current} / ${total} widgets` : 'Agent working'} · ${task.status === 'running' ? 'building report' : 'up next'}`}</div></div>`
     : '';
   const reportUrl = report?.public_url || report?.edit_url || null;
   const reportBlock = report

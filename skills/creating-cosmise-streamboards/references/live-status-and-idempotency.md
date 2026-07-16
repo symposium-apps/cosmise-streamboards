@@ -8,21 +8,13 @@ Separate background reconciliation from user-visible agent work at the producer 
 - Explicit synchronization requested by a user or agent may record activity.
 - The browser must not infer activity from connection state, selected reports, old events, or sidebar labels.
 - Compute `isActive` from the current authoritative task only, using explicit nonterminal statuses.
-- Compute idle copy from the newest meaningful terminal event.
+- Link the task to the exact Streamboard resource immediately after creation.
 
-When polling, build a signature from stable identity, semantic status, message, and event timestamp. If unchanged, update only relative time; do not replace the toast, tabs, or sidebar DOM.
+When polling, keep the report iframe, overlay root, tabs, and sidebar DOM mounted. Update only existing overlay text and progress width. Never replay an entrance animation for a progress update.
 
 ## Status presentation
 
-Use semantic, visually distinct icon families:
-
-- running: rotating refresh/progress glyph;
-- queued or waiting: clock;
-- success: check;
-- failed: warning;
-- informational: activity pulse.
-
-Do not use decorative stars. During active work, an animated two-pixel bottom border is the preferred loading affordance. Terminal states must have no loading animation.
+Build status is overlay-only. Do not render a global agent strip or floating agent-status toast. New unpublished reports use the overlay over a Streamboard skeleton; published reports use it over the still-mounted iframe. Remove it immediately when the linked task becomes terminal. Utility feedback such as “link copied” is separate from build status.
 
 ## Prevent duplicate reports
 

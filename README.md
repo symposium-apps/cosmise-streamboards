@@ -9,7 +9,7 @@ A local-first Symposium app that makes agent-driven Streamboards work visible.
 - loads the profile-scoped `COSMISE_MCP_TOKEN` into the trusted backend only;
 - wraps every production call with automatic sanitized realtime activity;
 - gives connected agents one machine-readable bootstrap covering production credential setup, both APIs, layouts, metrics, formulas, realtime state and verification;
-- tells connected agents through MCP initialization instructions to run the complete build lifecycle and mirror meaningful production calls into the live **Building now** status;
+- tells connected agents through MCP initialization instructions to run the complete build lifecycle and drive a stable in-view build overlay tied to the active report task;
 - gives the coding agent local communication tools for connection readiness, call receipts, tasks, messages, verification, reports, and layout-template selection;
 - ships versioned sanitized layout examples as app files;
 - streams UI updates over Server-Sent Events and polls local state every two seconds as a resilience fallback;

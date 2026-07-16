@@ -7,22 +7,21 @@
   <title>Cosmise Streamboards</title>
   <link rel="icon" href="/assets/analytics-arc-stack.svg" type="image/svg+xml">
   <link rel="preload" href="/assets/cosmise-mascot.png" as="image">
-  <link rel="stylesheet" href="/styles.css?v=20260716-icons">
+  <link rel="stylesheet" href="/styles.css?v=20260716-stable-build-card">
 </head>
 <body>
   <div class="app" id="app">
     <nav id="rail" class="rail open" aria-label="Streamboard reports"></nav>
     <main class="main">
       <div id="tabbar" class="tabbar" role="tablist" aria-label="Open reports"></div>
-      <section id="agent" class="agent" aria-live="polite"></section>
       <div id="repbar" class="repbar"></div>
       <section id="content" class="scroll" aria-live="polite"></section>
     </main>
   </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
-  <aside id="agent-toast" class="agent-toast" role="status" aria-live="polite" aria-atomic="true" hidden></aside>
+  <div id="rail-popover" class="rail-popover" role="tooltip" hidden></div>
 
-  <script src="/app.js?v=20260716-icons" defer></script>
+  <script src="/app.js?v=20260716-stable-build-card" defer></script>
 </body>
 </html>
