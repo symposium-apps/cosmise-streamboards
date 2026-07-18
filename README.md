@@ -30,7 +30,7 @@ The server prints local and LAN URLs. SYM-Node supplies its managed host/port at
 
 The app requires the profile-scoped `cosmise` integration. Its trusted backend reads `COSMISE_MCP_TOKEN` only from the managed app's own process environment and calls `COSMISE_MCP_URL` (default `https://cosmise.com/api/mcp`).
 
-If the app secret is missing, the UI becomes a connection gate. Synchronize Cosmise and restart the managed app. SYM-Node binds the credential directly to the app-specific private secret store without exposing it to the coding session.
+If the app credential is missing, the UI becomes a connection gate. Synchronize Cosmise and restart the managed app; SYM-Node injects the profile integration credential only into the declared backend process.
 
 When `runtime.backend_mcp_configured` is not `true`, the UI shows a hard connection gate and hides stale report navigation. The coding agent receives the same exact recovery sequence through MCP initialization and `cosmise_app_get_bootstrap`: connect/synchronize Cosmise in Symposium Connections, restart `cosmise-streamboards`, re-read state, call `cosmise_app_sync_now`, and verify `streamboards_get_context` before writing.
 

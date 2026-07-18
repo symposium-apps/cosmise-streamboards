@@ -14,10 +14,9 @@ The backend uses `COSMISE_MCP_TOKEN` to call `https://cosmise.com/api/mcp` and r
 
 1. Call `cosmise_app_update_connection` with `state: "missing_key"`.
 2. Tell the operator exactly: **Open Connections, select Cosmise, and synchronize this organisation.** Never request or repeat the credential value.
-3. SYM-Node binds the synchronized credential directly to the app's private profile-scoped secret store. Never inspect, copy, or request the token from the coding session.
-4. Restart `cosmise-streamboards` with the profile-scoped `run_app` tool so the managed process receives the app secret.
-5. Call `cosmise_app_sync_now`, then `streamboards_get_context` through this wrapper.
-6. Proceed only when `runtime.backend_mcp_configured=true`, `connection.state=ready`, and the returned organisation matches the active profile.
+3. Restart `cosmise-streamboards` with the profile-scoped `run_app` tool so SYM-Node injects the synchronized profile integration credential only into this backend process.
+4. Call `cosmise_app_sync_now`, then `streamboards_get_context` through this wrapper.
+5. Proceed only when `runtime.backend_mcp_configured=true`, `connection.state=ready`, and the returned organisation matches the active profile.
 
 Do not continue production work until the key-scoped organisation and available tools have been verified.
 

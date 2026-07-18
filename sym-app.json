@@ -52,7 +52,10 @@
       "label": "Streamboards files",
       "quota_mb": 1024,
       "content_types": ["text/*", "application/json", "image/*"]
-    }
+    },
+    "private_state": true,
+    "cache": true,
+    "legacy_persistent_migration": "state"
   },
   "marketplace": {
     "subtitle": "Cosmise Streamboards",

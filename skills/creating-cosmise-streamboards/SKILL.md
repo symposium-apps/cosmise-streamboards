@@ -38,19 +38,18 @@ Do not edit another Hermes profile. Installation always targets the profile runn
 - Preview destructive operations. Require explicit confirmation for permanent deletion unless the user has already clearly authorized it.
 - For permanent deletion, call `streamboards_preview_delete`, then call `streamboards_delete` with both `confirm: true` and the exact `confirm_streamboard_name`. A dry-run response with `confirm_required: true` is not deletion; require `deleted: true` and then verify the board is absent from `streamboards_list`.
 
-## Exact production credential binding contract
+## Exact production credential contract
 
 Do not search the repository, shell history, arbitrary environment files, another profile, or the browser for a Cosmise token. Do not ask the operator to paste one. The only valid source is the Cosmise connection already synchronized for the active Symposium profile.
 
 When `runtime.backend_mcp_configured` is false, perform exactly this sequence:
 
 1. Tell the operator: **Open Connections, select Cosmise, and synchronize this organisation.**
-2. SYM-Node binds the synchronized credential directly to the app's private profile-scoped secret store. Never read or copy it from the coding session.
-3. Restart `cosmise-streamboards` with the **profile-scoped `run_app` tool** so the managed process receives the app secret.
-4. Call `cosmise_app_get_state`, `cosmise_app_sync_now`, and `streamboards_get_context`.
-5. Proceed only when `runtime.backend_mcp_configured=true`, `connection.state=ready`, and the credential-resolved organisation matches the active profile.
+2. Restart `cosmise-streamboards` with the **profile-scoped `run_app` tool**. SYM-Node injects the profile integration credential only into this declared backend process.
+3. Call `cosmise_app_get_state`, `cosmise_app_sync_now`, and `streamboards_get_context`.
+4. Proceed only when `runtime.backend_mcp_configured=true`, `connection.state=ready`, and the credential-resolved organisation matches the active profile.
 
-If the synchronized credential is absent, stop at `missing_key`. Never substitute a local `.env`, a token from another profile, or a caller-supplied organisation identifier.
+If the synchronized integration is absent, stop at `missing_key`. Never substitute a local `.env`, a token from another profile, or a caller-supplied organisation identifier.
 
 ## Required startup sequence
 

@@ -11,8 +11,8 @@ const { inventoryFiles } = require('./lib/runtime-files');
 const catalog = require('./data/tool-catalog.json');
 const { listLayoutTemplates, getLayoutTemplate, library: layoutLibrary } = require('./lib/layout-library');
 
-const DATA_DIR = process.env.SYM_APP_DATA_DIR || path.join(__dirname, '.sym-data');
-const DATA_FILE = global.__COSMISE_TEST_DATA_FILE__ || process.env.COSMISE_STATE_FILE || path.join(DATA_DIR, 'state.json');
+const STATE_DIR = process.env.SYM_APP_STATE_DIR || path.join(__dirname, '.sym-data');
+const DATA_FILE = global.__COSMISE_TEST_DATA_FILE__ || process.env.COSMISE_STATE_FILE || path.join(STATE_DIR, 'state.json');
 const HOST = process.env.HOST || '0.0.0.0';
 const PORT = Number(process.env.PORT || 4322);
 const PROFILE_ID = process.env.SYM_PROFILE_ID || 'local';
@@ -69,7 +69,7 @@ function reportUrl(value) {
 }
 
 
-app.get('/_sym/health', (req, res) => res.json({ ok: true, service: 'cosmise-streamboards', version: '0.3.5', credential_boundary: 'backend_only', backend_mcp_configured: productionClient.configured(), profile_id: store.state.profile_id }));
+app.get('/_sym/health', (req, res) => res.json({ ok: true, service: 'cosmise-streamboards', version: '0.3.6', credential_boundary: 'backend_only', backend_mcp_configured: productionClient.configured(), profile_id: store.state.profile_id }));
 app.get('/api/health', (req, res) => res.json({ ok: true, service: 'cosmise-streamboards', credential_boundary: 'backend_only', backend_mcp_configured: productionClient.configured(), production_tool_count: catalog.tool_count, local_tool_count: LOCAL_TOOLS.length }));
 app.get('/api/state', (req, res) => res.json(receipt('get_state', store.snapshot())));
 app.get('/api/view', (req, res) => res.json(receipt('get_view', { view: store.snapshot().view, sidebar_items: store.snapshot().sidebar_items })));

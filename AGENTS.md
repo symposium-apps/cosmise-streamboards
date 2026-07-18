@@ -1,6 +1,6 @@
 # Coding-agent entry point
 
-This repository is the trusted local Cosmise Streamboards backend and visibility app. Its local `/mcp` wraps every canonical `streamboards_*` production tool, calls `https://cosmise.com/api/mcp` with the backend-only profile credential, and records call status automatically. Do not bypass it with a separate production MCP connection.
+This repository is the trusted local Cosmise Streamboards backend and visibility app. Its local `/mcp` is the only agent-facing Streamboards MCP: every advertised `streamboards_*` tool is a local wrapper that calls production with the backend-only app credential and records realtime UI state automatically. A separate production Cosmise MCP must not be configured or used.
 
 ## Required first actions
 
@@ -9,20 +9,18 @@ This repository is the trusted local Cosmise Streamboards backend and visibility
 3. Call local `cosmise_app_get_bootstrap` (or `GET /api/agent/bootstrap`).
 4. Call `cosmise_app_get_state` and inspect `runtime.backend_mcp_configured`.
 5. If it is false, call `cosmise_app_update_connection` with `state: "missing_key"`, stop all `streamboards_*` calls, and tell the operator: **Open Connections, select Cosmise, and synchronize this organisation.** Never ask for the token value.
-6. After synchronization, SYM-Node binds the credential directly to this app's private profile-scoped secret store. Never copy or bind credentials from the coding session.
-7. Restart `cosmise-streamboards` with the profile-scoped `run_app` tool so the backend receives its app-specific secret.
-8. Call `cosmise_app_sync_now`, then `streamboards_get_context` through this wrapper.
-9. Proceed only when `runtime.backend_mcp_configured=true`, `connection.state=ready`, and the returned organisation matches the active profile.
-10. Call `cosmise_app_start_task` before production work so the UI shows active work.
+6. Restart `cosmise-streamboards` with the profile-scoped `run_app` tool so SYM-Node injects the synchronized credential only into this backend process.
+7. Call `cosmise_app_sync_now`, then `streamboards_get_context` through this wrapper.
+8. Proceed only when `runtime.backend_mcp_configured=true`, `connection.state=ready`, and the returned organisation matches the active profile.
+9. Call `cosmise_app_start_task` before production work so the UI shows active work.
 
 ## Missing production access
 
 The app backend reads `COSMISE_MCP_TOKEN` only from its own process environment. It does not fall back to the profile Gateway secret file. The exact recovery sequence is:
 
 1. Open Connections, select **Cosmise**, and synchronize this organisation.
-2. Re-synchronize the Cosmise connection. SYM-Node binds the credential to the app's private secret store without exposing it to the coding session.
-3. Restart `cosmise-streamboards` with the profile-scoped `run_app` tool.
-4. Call `cosmise_app_sync_now`, then `streamboards_get_context`; proceed only after the backend is configured and the organisation matches.
+2. Restart `cosmise-streamboards` with the profile-scoped `run_app` tool. SYM-Node injects the profile integration credential only into the declared backend process.
+3. Call `cosmise_app_sync_now`, then `streamboards_get_context`; proceed only after the backend is configured and the organisation matches.
 
 Never ask for, print, log, return, persist, or send the token to browser code, `.sym-data`, tasks, activity, reports, templates, documentation, or chat.
 
@@ -37,7 +35,7 @@ If production tools remain unavailable, leave the task in `waiting`, keep the UI
 4. Inspect existing boards/branding plus both layout sources:
    - `cosmise_app_list_layout_templates` for bundled sanitized real-report examples;
    - `streamboards_list_templates` for available live templates.
-5. Make every `streamboards_*` call through this wrapper; running/success/failure activity is automatic. A direct profile Cosmise MCP route is forbidden and unsupported.
+5. Make every `streamboards_*` call through this wrapper; running/success/failure activity is automatic.
 6. Continue task progress updates while creating the board, widgets and exact 48-column layout.
 7. Validate, dry-run refresh, execute refresh, poll cache status to terminal and inspect rendered usefulness.
 8. Call `cosmise_app_show_verification`, then `cosmise_app_complete_task`. Report discovery and canonical URLs synchronize automatically.
