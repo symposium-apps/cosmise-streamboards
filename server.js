@@ -11,7 +11,8 @@ const { inventoryFiles } = require('./lib/runtime-files');
 const catalog = require('./data/tool-catalog.json');
 const { listLayoutTemplates, getLayoutTemplate, library: layoutLibrary } = require('./lib/layout-library');
 
-const DATA_FILE = global.__COSMISE_TEST_DATA_FILE__ || process.env.COSMISE_STATE_FILE || path.join(__dirname, '.sym-data', 'state.json');
+const DATA_DIR = process.env.SYM_APP_DATA_DIR || path.join(__dirname, '.sym-data');
+const DATA_FILE = global.__COSMISE_TEST_DATA_FILE__ || process.env.COSMISE_STATE_FILE || path.join(DATA_DIR, 'state.json');
 const HOST = process.env.HOST || '0.0.0.0';
 const PORT = Number(process.env.PORT || 4322);
 const PROFILE_ID = process.env.SYM_PROFILE_ID || 'local';

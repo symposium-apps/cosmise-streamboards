@@ -42,22 +42,15 @@ Do not edit another Hermes profile. Installation always targets the profile runn
 
 Do not search the repository, shell history, arbitrary environment files, another profile, or the browser for a Cosmise token. Do not ask the operator to paste one. The only valid source is the Cosmise connection already synchronized for the active Symposium profile.
 
-When `runtime.backend_mcp_configured` is false, perform exactly this sequence from the app repository:
+When `runtime.backend_mcp_configured` is false, perform exactly this sequence:
 
 1. Tell the operator: **Open Connections, select Cosmise, and synchronize this organisation.**
-2. Determine the active Symposium profile ID from the app/runtime context; never infer it from an organisation or customer name.
-3. Run:
-   `SYM_PROFILE_ID=<active-profile-id> node scripts/bind-profile-credential.js`
-4. The helper reads only:
-   `/srv/symposium-data/profile-runtime/<active-profile-id>/hermes-app-secrets.env`
-5. It copies only `COSMISE_MCP_TOKEN` into:
-   `/srv/symposium-data/profile-runtime/<active-profile-id>/apps/cosmise-streamboards/secrets.env`
-6. It writes the target atomically with private permissions and must print only a safe `configured=true` receipt—never the token.
-7. Restart `cosmise-streamboards` with the **profile-scoped `run_app` tool**. Writing `secrets.env` alone does not alter an already-running process; the managed restart is what injects `COSMISE_MCP_TOKEN` into the app's actual process environment.
-8. Call `cosmise_app_get_state`, `cosmise_app_sync_now`, and `streamboards_get_context`.
-9. Proceed only when `runtime.backend_mcp_configured=true`, `connection.state=ready`, and the credential-resolved organisation matches the active profile.
+2. SYM-Node binds the synchronized credential directly to the app's private profile-scoped secret store. Never read or copy it from the coding session.
+3. Restart `cosmise-streamboards` with the **profile-scoped `run_app` tool** so the managed process receives the app secret.
+4. Call `cosmise_app_get_state`, `cosmise_app_sync_now`, and `streamboards_get_context`.
+5. Proceed only when `runtime.backend_mcp_configured=true`, `connection.state=ready`, and the credential-resolved organisation matches the active profile.
 
-If the source file or named token is absent, stop at `missing_key`. Never substitute a local `.env`, a token from another profile, or a caller-supplied organisation identifier.
+If the synchronized credential is absent, stop at `missing_key`. Never substitute a local `.env`, a token from another profile, or a caller-supplied organisation identifier.
 
 ## Required startup sequence
 

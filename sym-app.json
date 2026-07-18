@@ -46,7 +46,13 @@
     }
   ],
   "data": {
-    "persistent_paths": [".sym-data"]
+    "persistent_paths": [".sym-data"],
+    "user_data": {
+      "enabled": true,
+      "label": "Streamboards files",
+      "quota_mb": 1024,
+      "content_types": ["text/*", "application/json", "image/*"]
+    }
   },
   "marketplace": {
     "subtitle": "Cosmise Streamboards",

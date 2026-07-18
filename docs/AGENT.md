@@ -14,7 +14,7 @@ The backend uses `COSMISE_MCP_TOKEN` to call `https://cosmise.com/api/mcp` and r
 
 1. Call `cosmise_app_update_connection` with `state: "missing_key"`.
 2. Tell the operator exactly: **Open Connections, select Cosmise, and synchronize this organisation.** Never request or repeat the credential value.
-3. From this app repository run `SYM_PROFILE_ID=<active-managed-profile-id> node scripts/bind-profile-credential.js`. The helper reads only `COSMISE_MCP_TOKEN` from `/srv/symposium-data/profile-runtime/<active-managed-profile-id>/hermes-app-secrets.env`, then atomically writes only that named value to `/srv/symposium-data/profile-runtime/<active-managed-profile-id>/apps/cosmise-streamboards/secrets.env` with mode `0600`. It never prints the value. The managed profile ID is distinct from the Hermes profile name used for skill installation; inspect both independently.
+3. SYM-Node binds the synchronized credential directly to the app's private profile-scoped secret store. Never inspect, copy, or request the token from the coding session.
 4. Restart `cosmise-streamboards` with the profile-scoped `run_app` tool so the managed process receives the app secret.
 5. Call `cosmise_app_sync_now`, then `streamboards_get_context` through this wrapper.
 6. Proceed only when `runtime.backend_mcp_configured=true`, `connection.state=ready`, and the returned organisation matches the active profile.

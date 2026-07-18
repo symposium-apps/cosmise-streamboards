@@ -9,7 +9,7 @@ This repository is the trusted local Cosmise Streamboards backend and visibility
 3. Call local `cosmise_app_get_bootstrap` (or `GET /api/agent/bootstrap`).
 4. Call `cosmise_app_get_state` and inspect `runtime.backend_mcp_configured`.
 5. If it is false, call `cosmise_app_update_connection` with `state: "missing_key"`, stop all `streamboards_*` calls, and tell the operator: **Open Connections, select Cosmise, and synchronize this organisation.** Never ask for the token value.
-6. After synchronization, run `SYM_PROFILE_ID=<active-managed-profile-id> node scripts/bind-profile-credential.js` from this repository. It reads only `COSMISE_MCP_TOKEN` from `/srv/symposium-data/profile-runtime/<active-managed-profile-id>/hermes-app-secrets.env` and atomically writes only that value to `/srv/symposium-data/profile-runtime/<active-managed-profile-id>/apps/cosmise-streamboards/secrets.env` with mode `0600`; it must report only sanitized configuration status and never the credential.
+6. After synchronization, SYM-Node binds the credential directly to this app's private profile-scoped secret store. Never copy or bind credentials from the coding session.
 7. Restart `cosmise-streamboards` with the profile-scoped `run_app` tool so the backend receives its app-specific secret.
 8. Call `cosmise_app_sync_now`, then `streamboards_get_context` through this wrapper.
 9. Proceed only when `runtime.backend_mcp_configured=true`, `connection.state=ready`, and the returned organisation matches the active profile.
@@ -20,7 +20,7 @@ This repository is the trusted local Cosmise Streamboards backend and visibility
 The app backend reads `COSMISE_MCP_TOKEN` only from its own process environment. It does not fall back to the profile Gateway secret file. The exact recovery sequence is:
 
 1. Open Connections, select **Cosmise**, and synchronize this organisation.
-2. From this app repository run `SYM_PROFILE_ID=<active-managed-profile-id> node scripts/bind-profile-credential.js`. The helper reads only `COSMISE_MCP_TOKEN` from `/srv/symposium-data/profile-runtime/<active-managed-profile-id>/hermes-app-secrets.env`, then atomically writes only that named value to `/srv/symposium-data/profile-runtime/<active-managed-profile-id>/apps/cosmise-streamboards/secrets.env` with mode `0600`. It never prints the value.
+2. Re-synchronize the Cosmise connection. SYM-Node binds the credential to the app's private secret store without exposing it to the coding session.
 3. Restart `cosmise-streamboards` with the profile-scoped `run_app` tool.
 4. Call `cosmise_app_sync_now`, then `streamboards_get_context`; proceed only after the backend is configured and the organisation matches.
 
@@ -37,7 +37,7 @@ If production tools remain unavailable, leave the task in `waiting`, keep the UI
 4. Inspect existing boards/branding plus both layout sources:
    - `cosmise_app_list_layout_templates` for bundled sanitized real-report examples;
    - `streamboards_list_templates` for available live templates.
-5. Make every `streamboards_*` call through this wrapper; running/success/failure activity is automatic.
+5. Make every `streamboards_*` call through this wrapper; running/success/failure activity is automatic. A direct profile Cosmise MCP route is forbidden and unsupported.
 6. Continue task progress updates while creating the board, widgets and exact 48-column layout.
 7. Validate, dry-run refresh, execute refresh, poll cache status to terminal and inspect rendered usefulness.
 8. Call `cosmise_app_show_verification`, then `cosmise_app_complete_task`. Report discovery and canonical URLs synchronize automatically.
