@@ -304,8 +304,23 @@ test('Mini-Sym exposes the supplied compact live-state surface', async () => {
   const html = await response.text();
   assert.equal(response.status, 200);
   assert.match(html, /Cosmise Streamboards · Mini-Sym/);
+  assert.match(html, /<link rel="icon" href="\/assets\/icon\.svg" type="image\/svg\+xml">/);
   assert.match(html, /id="mini-root"/);
   assert.match(html, /mini-sym\.js/);
+});
+
+test('browser surfaces use the marketplace icon as their favicon', async () => {
+  const [pageResponse, iconResponse] = await Promise.all([
+    fetch(base + '/'),
+    fetch(base + '/assets/icon.svg')
+  ]);
+  const [html, icon] = await Promise.all([pageResponse.text(), iconResponse.text()]);
+  assert.equal(pageResponse.status, 200);
+  assert.equal(iconResponse.status, 200);
+  assert.match(iconResponse.headers.get('content-type') || '', /image\/svg\+xml/);
+  assert.match(html, /<link rel="icon" href="\/assets\/icon\.svg" type="image\/svg\+xml">/);
+  assert.match(icon, /fill="#f43f5e"/);
+  assert.match(icon, /fill="#f59e0b"/);
 });
 
 test('browser clients reconcile local state when SSE is interrupted', async () => {
