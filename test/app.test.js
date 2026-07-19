@@ -304,23 +304,29 @@ test('Mini-Sym exposes the supplied compact live-state surface', async () => {
   const html = await response.text();
   assert.equal(response.status, 200);
   assert.match(html, /Cosmise Streamboards · Mini-Sym/);
-  assert.match(html, /<link rel="icon" href="\/assets\/icon\.svg" type="image\/svg\+xml">/);
+  assert.match(html, /<link rel="icon" href="\/favicon-32x32\.png\?v=20260720-1" type="image\/png" sizes="32x32">/);
   assert.match(html, /id="mini-root"/);
   assert.match(html, /mini-sym\.js/);
 });
 
-test('browser surfaces use the marketplace icon as their favicon', async () => {
-  const [pageResponse, iconResponse] = await Promise.all([
+test('browser surfaces expose PNG, ICO, and Apple-compatible favicons', async () => {
+  const [pageResponse, pngResponse, icoResponse, appleResponse] = await Promise.all([
     fetch(base + '/'),
-    fetch(base + '/assets/icon.svg')
+    fetch(base + '/favicon-32x32.png'),
+    fetch(base + '/favicon.ico'),
+    fetch(base + '/apple-touch-icon.png')
   ]);
-  const [html, icon] = await Promise.all([pageResponse.text(), iconResponse.text()]);
+  const html = await pageResponse.text();
   assert.equal(pageResponse.status, 200);
-  assert.equal(iconResponse.status, 200);
-  assert.match(iconResponse.headers.get('content-type') || '', /image\/svg\+xml/);
-  assert.match(html, /<link rel="icon" href="\/assets\/icon\.svg" type="image\/svg\+xml">/);
-  assert.match(icon, /fill="#f43f5e"/);
-  assert.match(icon, /fill="#f59e0b"/);
+  assert.equal(pngResponse.status, 200);
+  assert.equal(icoResponse.status, 200);
+  assert.equal(appleResponse.status, 200);
+  assert.match(pngResponse.headers.get('content-type') || '', /image\/png/);
+  assert.match(icoResponse.headers.get('content-type') || '', /image\/x-icon|image\/vnd\.microsoft\.icon/);
+  assert.match(appleResponse.headers.get('content-type') || '', /image\/png/);
+  assert.match(html, /<link rel="icon" href="\/favicon-32x32\.png\?v=20260720-1" type="image\/png" sizes="32x32">/);
+  assert.match(html, /<link rel="shortcut icon" href="\/favicon\.ico\?v=20260720-1">/);
+  assert.match(html, /<link rel="apple-touch-icon" href="\/apple-touch-icon\.png\?v=20260720-1" sizes="180x180">/);
 });
 
 test('browser clients reconcile local state when SSE is interrupted', async () => {
