@@ -13,7 +13,7 @@ global.__COSMISE_TEST_DATA_FILE__ = stateFile;
 process.env.PORT = '54321';
 process.env.SYM_PROFILE_ID = 'profile-test';
 
-const { app, store, runtimePort } = require('../server');
+const { app, store, productionClient, runtimePort } = require('../server');
 const { AppStore } = require('../lib/store');
 let server;
 let base;
@@ -213,6 +213,13 @@ test('state subscribers receive realtime updates', async () => {
 });
 
 test('SSE endpoint streams initial state and subsequent API mutations', async () => {
+  const originalConnectBrowser = productionClient.connectBrowser.bind(productionClient);
+  let connected = 0;
+  let released = 0;
+  productionClient.connectBrowser = () => {
+    connected += 1;
+    return () => { released += 1; };
+  };
   const controller = new AbortController();
   const response = await fetch(base + '/api/events/stream', { signal: controller.signal });
   assert.equal(response.status, 200);
@@ -228,6 +235,36 @@ test('SSE endpoint streams initial state and subsequent API mutations', async ()
   assert.match(stream, /HTTP SSE update/);
   controller.abort();
   await reader.cancel().catch(() => undefined);
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  assert.equal(connected, 1);
+  assert.equal(released, 1);
+  productionClient.connectBrowser = originalConnectBrowser;
+});
+
+test('production reconciliation runs only while a browser client is connected', async () => {
+  const { CosmiseClient } = require('../lib/cosmise-client');
+  const client = new CosmiseClient({ token: 'test-token', endpoint: 'https://example.invalid/mcp', store: {}, catalog: { tools: [] } });
+  let connectionChecks = 0;
+  let reportChecks = 0;
+  client.reconcile = async () => { connectionChecks += 1; };
+  client.reconcileReports = async () => { reportChecks += 1; };
+
+  client.start(20);
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert.equal(connectionChecks, 0, 'server startup must not poll production');
+  assert.equal(reportChecks, 0, 'server startup must not reconcile reports');
+
+  const release = client.connectBrowser();
+  await new Promise((resolve) => setTimeout(resolve, 55));
+  assert.equal(client.browserClients, 1);
+  assert(connectionChecks >= 1);
+  assert(reportChecks >= 1);
+
+  release();
+  const stoppedAt = reportChecks;
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert.equal(client.browserClients, 0);
+  assert.equal(reportChecks, stoppedAt, 'report polling must stop after the browser closes');
 });
 
 test('report API rejects non-Cosmise URLs', async () => {

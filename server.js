@@ -69,7 +69,7 @@ function reportUrl(value) {
 }
 
 
-app.get('/_sym/health', (req, res) => res.json({ ok: true, service: 'cosmise-streamboards', version: '0.3.8', credential_boundary: 'backend_only', backend_mcp_configured: productionClient.configured(), profile_id: store.state.profile_id }));
+app.get('/_sym/health', (req, res) => res.json({ ok: true, service: 'cosmise-streamboards', version: '0.3.9', credential_boundary: 'backend_only', backend_mcp_configured: productionClient.configured(), profile_id: store.state.profile_id }));
 app.get('/api/health', (req, res) => res.json({ ok: true, service: 'cosmise-streamboards', credential_boundary: 'backend_only', backend_mcp_configured: productionClient.configured(), production_tool_count: catalog.tool_count, local_tool_count: LOCAL_TOOLS.length }));
 app.get('/api/state', (req, res) => res.json(receipt('get_state', store.snapshot())));
 app.get('/api/view', (req, res) => res.json(receipt('get_view', { view: store.snapshot().view, sidebar_items: store.snapshot().sidebar_items })));
@@ -138,6 +138,7 @@ app.get('/api/templates/:id', (req, res) => {
   return res.json(receipt('get_layout_template', { source_policy: layoutLibrary.source_policy, grid: layoutLibrary.grid, agent_rules: layoutLibrary.agent_rules, template }));
 });
 app.get('/api/events/stream', (req, res) => {
+  const releaseBrowserPolling = productionClient.connectBrowser();
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache, no-transform',
@@ -150,6 +151,7 @@ app.get('/api/events/stream', (req, res) => {
   req.on('close', () => {
     clearInterval(heartbeat);
     unsubscribe();
+    releaseBrowserPolling();
   });
 });
 
