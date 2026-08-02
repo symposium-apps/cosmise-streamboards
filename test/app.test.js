@@ -267,6 +267,12 @@ test('production reconciliation runs only while a browser client is connected', 
   assert.equal(reportChecks, stoppedAt, 'report polling must stop after the browser closes');
 });
 
+test('default browser reconciliation uses low-frequency safety intervals', () => {
+  const source = fs.readFileSync(path.join(__dirname, '../lib/cosmise-client.js'), 'utf8');
+  assert.match(source, /pollIntervalMs = 300000/);
+  assert.match(source, /connectionIntervalMs = 900000/);
+});
+
 test('report API rejects non-Cosmise URLs', async () => {
   const rejected = await json('/api/reports', { method: 'POST', body: JSON.stringify({ streamboard_id: 'bad', title: 'Bad', url: 'https://example.com/report' }) });
   assert.equal(rejected.status, 400);
