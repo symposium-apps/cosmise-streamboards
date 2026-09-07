@@ -91,6 +91,40 @@ test('final activity persistence failure cannot leave a success event', async t 
  await assert.rejects(client.callTool('streamboards_get_context'), e => e.code === 'RUNTIME_STATE_UNWRITABLE');
  assert.equal(store.state.events[0].status, 'failed');
 });
+
+test('unreadable and malformed loaded state cannot be replaced by later mutations or sync', async t => {
+ for (const mode of ['malformed', 'unreadable']) {
+  if (mode === 'unreadable' && process.getuid?.() === 0) continue;
+  const { root } = fixture(t);
+  const file = path.join(root, 'protected.json');
+  const original = mode === 'malformed' ? '{incomplete-json' : '{"reports":[{"id":"original"}]}';
+  fs.writeFileSync(file, original, { mode: mode === 'unreadable' ? 0o200 : 0o600 });
+  const store = new AppStore({ file });
+  const client = new CosmiseClient({ token: 'synthetic-test-token', store, catalog });
+  let calls = 0; client.rpc = async () => { calls++; return { structuredContent: {} }; };
+  client.start();
+  assert.throws(() => store.setView({ status: 'working' }), e => e.code === 'RUNTIME_STATE_UNWRITABLE');
+  await assert.rejects(client.reconcile(), e => e.code === 'RUNTIME_STATE_UNWRITABLE');
+  fs.chmodSync(file, 0o600);
+  // A previously failed load must not overwrite real data even after mode repair.
+  assert.throws(() => store.checkHealth(), e => e.code === 'RUNTIME_STATE_UNWRITABLE');
+  assert.equal(fs.readFileSync(file, 'utf8'), original); assert.equal(calls, 0);
+ }
+});
+test('actual destination replacement failure blocks unrecorded upstream calls', async t => {
+ const { client, store, calls } = fixture(t); client.start();
+ const original = fs.readFileSync(store.file, 'utf8');
+ const rename = fs.renameSync;
+ fs.renameSync = (a, b) => { if (b === store.file) throw Object.assign(new Error('destination denied'), { code: 'EPERM' }); return rename(a, b); };
+ try {
+  assert.throws(() => store.save(), e => e.code === 'RUNTIME_STATE_UNWRITABLE');
+  await assert.rejects(client.callTool('streamboards_list', {}, { record: false }), e => e.code === 'RUNTIME_STATE_UNWRITABLE');
+  assert.equal(calls(), 0); assert.equal(store.state.runtime.state_health.writable, false);
+  assert.equal(fs.readFileSync(store.file, 'utf8'), original);
+ } finally { fs.renameSync = rename; }
+ assert.equal(store.checkHealth().writable, true);
+});
+
 test('caller cannot claim missing_key when backend credential exists', t => {
  const { client, store } = fixture(t); client.start();
  store.updateConnection({ state: 'missing_key', configured: false });

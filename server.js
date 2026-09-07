@@ -74,7 +74,7 @@ app.use(['/_sym/health', '/api/health'], (req, res, next) => {
   try { store.checkHealth(); next(); }
   catch (error) { res.status(503).json({ ok: false, code: error.code, error: error.message, state_health: store.state.runtime.state_health }); }
 });
-app.get('/_sym/health', (req, res) => res.json({ ok: true, service: 'cosmise-streamboards', version: '0.3.12', release_commit: process.env.SYM_APP_RELEASE_COMMIT || null, credential_boundary: 'backend_only', backend_mcp_configured: productionClient.configured(), profile_id: store.state.profile_id, state_health: store.state.runtime.state_health, expected_env_var: store.state.runtime.expected_env_var }));
+app.get('/_sym/health', (req, res) => res.json({ ok: true, service: 'cosmise-streamboards', version: '0.3.13', release_commit: process.env.SYM_APP_RELEASE_COMMIT || null, credential_boundary: 'backend_only', backend_mcp_configured: productionClient.configured(), profile_id: store.state.profile_id, state_health: store.state.runtime.state_health, expected_env_var: store.state.runtime.expected_env_var }));
 app.get('/api/health', (req, res) => res.json({ ok: true, service: 'cosmise-streamboards', credential_boundary: 'backend_only', backend_mcp_configured: productionClient.configured(), production_tool_count: catalog.tool_count, local_tool_count: LOCAL_TOOLS.length }));
 app.get('/api/state', (req, res) => res.json(receipt('get_state', store.snapshot())));
 app.get('/api/view', (req, res) => res.json(receipt('get_view', { view: store.snapshot().view, sidebar_items: store.snapshot().sidebar_items })));
