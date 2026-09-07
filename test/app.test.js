@@ -131,8 +131,8 @@ test('local MCP records production readiness and sanitized call receipts', async
   await json('/mcp', { method: 'POST', body: JSON.stringify({ jsonrpc: '2.0', id: 21, method: 'tools/call', params: { name: 'cosmise_app_log_call', arguments: { task_id: 'test-task', tool_name: 'streamboards_validate', status: 'success', detail: 'Structure verified.', duration_ms: 142, streamboard_id: 'board-test' } } }) });
 
   const state = (await json('/api/state')).body.data;
-  assert.equal(state.connection.state, 'ready');
-  assert.equal(state.connection.configured, true);
+  assert.equal(state.connection.state, 'missing_key');
+  assert.equal(state.connection.configured, false);
   assert.equal(state.connection.mode, 'read_write');
   const call = state.events.find((event) => event.operation === 'streamboards_validate');
   assert.equal(call.source, 'remote_mcp');
@@ -243,7 +243,7 @@ test('SSE endpoint streams initial state and subsequent API mutations', async ()
 
 test('production reconciliation runs only while a browser client is connected', async () => {
   const { CosmiseClient } = require('../lib/cosmise-client');
-  const client = new CosmiseClient({ token: 'test-token', endpoint: 'https://example.invalid/mcp', store: {}, catalog: { tools: [] } });
+  const client = new CosmiseClient({ token: 'test-token', endpoint: 'https://example.invalid/mcp', store: new (require('../lib/store').AppStore)({ file: path.join(path.dirname(stateFile), 'poll-state.json') }), catalog: { tools: [] } });
   let connectionChecks = 0;
   let reportChecks = 0;
   client.reconcile = async () => { connectionChecks += 1; };
@@ -271,6 +271,22 @@ test('default browser reconciliation uses low-frequency safety intervals', () =>
   const source = fs.readFileSync(path.join(__dirname, '../lib/cosmise-client.js'), 'utf8');
   assert.match(source, /pollIntervalMs = 300000/);
   assert.match(source, /connectionIntervalMs = 900000/);
+});
+
+test('health and wrapper return explicit runtime-health failure without losing readable diagnostics', async () => {
+  const original = store.file;
+  try {
+    store.file = path.join(stateFile, 'impossible');
+    const health = await json('/_sym/health');
+    assert.equal(health.status, 503);
+    assert.equal(health.body.code, 'RUNTIME_STATE_UNWRITABLE');
+    const call = await json('/mcp', { method: 'POST', body: JSON.stringify({ jsonrpc: '2.0', id: 99, method: 'tools/call', params: { name: 'streamboards_get_context' } }) });
+    assert.equal(JSON.parse(call.body.result.content[0].text).code, 'RUNTIME_STATE_UNWRITABLE');
+    const state = await json('/api/state');
+    assert.equal(state.status, 200);
+    assert.equal(state.body.data.runtime.state_health.writable, false);
+  } finally { store.file = original; }
+  assert.equal((await json('/_sym/health')).status, 200);
 });
 
 test('report API rejects non-Cosmise URLs', async () => {

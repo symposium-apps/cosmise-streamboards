@@ -21,6 +21,7 @@ const store = new AppStore({ file: DATA_FILE, profileId: PROFILE_ID });
 const credential = loadCosmiseCredential(PROFILE_ID);
 const productionClient = new CosmiseClient({ token: credential.token, endpoint: process.env.COSMISE_MCP_URL, store, catalog });
 store.setRuntime({ backend_mcp_configured: productionClient.configured(), credential_source: credential.source, wrapped_tool_count: catalog.tool_count, accessible_files: inventoryFiles(__dirname) });
+productionClient.start();
 const mcp = createMcp({ store, productionClient, catalog });
 const app = express();
 
@@ -69,7 +70,11 @@ function reportUrl(value) {
 }
 
 
-app.get('/_sym/health', (req, res) => res.json({ ok: true, service: 'cosmise-streamboards', version: '0.3.10', credential_boundary: 'backend_only', backend_mcp_configured: productionClient.configured(), profile_id: store.state.profile_id }));
+app.use(['/_sym/health', '/api/health'], (req, res, next) => {
+  try { store.checkHealth(); next(); }
+  catch (error) { res.status(503).json({ ok: false, code: error.code, error: error.message, state_health: store.state.runtime.state_health }); }
+});
+app.get('/_sym/health', (req, res) => res.json({ ok: true, service: 'cosmise-streamboards', version: '0.3.11', credential_boundary: 'backend_only', backend_mcp_configured: productionClient.configured(), profile_id: store.state.profile_id, state_health: store.state.runtime.state_health, expected_env_var: store.state.runtime.expected_env_var }));
 app.get('/api/health', (req, res) => res.json({ ok: true, service: 'cosmise-streamboards', credential_boundary: 'backend_only', backend_mcp_configured: productionClient.configured(), production_tool_count: catalog.tool_count, local_tool_count: LOCAL_TOOLS.length }));
 app.get('/api/state', (req, res) => res.json(receipt('get_state', store.snapshot())));
 app.get('/api/view', (req, res) => res.json(receipt('get_view', { view: store.snapshot().view, sidebar_items: store.snapshot().sidebar_items })));
@@ -166,7 +171,7 @@ app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.ht
 
 app.use((error, req, res, next) => {
   console.error(`[cosmise-streamboards] ${req.method} ${req.path}:`, error.message);
-  res.status(400).json({ ok: false, error: error.message || 'Request failed' });
+  res.status(error.code === 'RUNTIME_STATE_UNWRITABLE' ? 503 : 400).json({ ok: false, code: error.code, error: error.message || 'Request failed' });
 });
 
 function localAddresses() {
@@ -183,7 +188,7 @@ if (require.main === module) {
     for (const address of localAddresses()) console.log(`LAN: ${address}`);
     console.log(`Local agent MCP wrapper: http://127.0.0.1:${PORT}/mcp (${LOCAL_TOOLS.length + catalog.tool_count} tools)`);
     console.log(`Cosmise MCP backend: ${productionClient.configured() ? 'configured' : 'missing credential'}`);
-    productionClient.start();
+
   });
 }
 
