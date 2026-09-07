@@ -12,6 +12,7 @@ const stateFile = path.join(temporary, 'state.json');
 global.__COSMISE_TEST_DATA_FILE__ = stateFile;
 process.env.PORT = '54321';
 process.env.SYM_PROFILE_ID = 'profile-test';
+process.env.SYM_APP_RELEASE_COMMIT = 'a'.repeat(40);
 
 const { app, store, productionClient, runtimePort } = require('../server');
 const { AppStore } = require('../lib/store');
@@ -30,6 +31,7 @@ test.after(async () => {
   delete global.__COSMISE_TEST_DATA_FILE__;
   delete process.env.PORT;
   delete process.env.SYM_PROFILE_ID;
+  delete process.env.SYM_APP_RELEASE_COMMIT;
 });
 
 test('runtime obeys the port allocated by SYM-node', () => {
@@ -50,6 +52,8 @@ async function json(url, options = {}) {
 }
 
 test('health and docs expose the backend-only credential boundary', async () => {
+  const runtime = await json('/_sym/health');
+  assert.equal(runtime.body.release_commit, 'a'.repeat(40));
   const health = await json('/api/health');
   assert.equal(health.status, 200);
   assert.equal(health.body.credential_boundary, 'backend_only');
