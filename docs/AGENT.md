@@ -30,6 +30,12 @@ Do not continue production work until the key-scoped organisation and available 
 6. Never claim asynchronous cache completion from a scheduling receipt. Poll cache status.
 7. Never claim email delivery. `sent: true` proves the application completed the send call, not inbox delivery.
 
+## Runtime health and restart recovery
+
+`COSMISE_MCP_TOKEN` is the only expected backend credential variable. Runtime diagnostics expose its name and presence, never its value. On restart a present credential yields `checking`, not stale `missing_key` or unverified `ready`. Explicit sync validates the connection. Missing credentials yield `missing_key`; rejected credentials yield `error`.
+
+`/_sym/health` probes state create/write/read/rename/cleanup and returns HTTP 503 with `RUNTIME_STATE_UNWRITABLE` when persistence is unavailable. Wrapped production calls preflight the same boundary even when activity recording is disabled. A state failure prevents forwarding, or reports failure if it occurs after the upstream result; do not blindly replay production writes after an uncertain outcome. Live diagnostics remain in memory if persistence itself fails. Interrupted tasks are marked failed on restart and require outcome verification before retrying.
+
 ## Normal agent loop
 
 ```text
