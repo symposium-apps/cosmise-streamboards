@@ -73,6 +73,24 @@ test('persistence failure after upstream cannot leave a running task or success 
  assert.equal(store.state.tasks[0].status, 'failed');
  assert.equal(store.state.connection.state, 'error');
 });
+test('unreadable existing state is not overwritten on startup', t => {
+ if (process.getuid?.() === 0) return t.skip('requires non-root');
+ const { store, client } = fixture(t);
+ fs.writeFileSync(store.file, 'preserve original unreadable state', { mode: 0o200 });
+ try {
+  client.start();
+  assert.equal(store.state.runtime.state_health.writable, false);
+  assert.equal(store.state.connection.configured, true);
+ } finally { fs.chmodSync(store.file, 0o600); }
+ assert.equal(fs.readFileSync(store.file, 'utf8'), 'preserve original unreadable state');
+});
+test('final activity persistence failure cannot leave a success event', async t => {
+ const { client, store, root } = fixture(t); client.start(); store.createTask({ title: 'Work' });
+ client.applyResult = () => {};
+ client.rpc = async () => { store.file = path.join(root, 'state.json', 'blocked'); return { structuredContent: {} }; };
+ await assert.rejects(client.callTool('streamboards_get_context'), e => e.code === 'RUNTIME_STATE_UNWRITABLE');
+ assert.equal(store.state.events[0].status, 'failed');
+});
 test('caller cannot claim missing_key when backend credential exists', t => {
  const { client, store } = fixture(t); client.start();
  store.updateConnection({ state: 'missing_key', configured: false });
